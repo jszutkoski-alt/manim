@@ -16,6 +16,10 @@ mantidos no vault do Obsidian.
   ser aplicado de uma vez a todas as aulas do cronograma quando o horário da turma muda.
 - **Exportar** — gera o diário em markdown (aula seguida das anotações) para salvar como `.md`
   ou copiar de volta para o vault.
+- **Verificar duplicatas** — na aba da disciplina, funde aulas com a mesma data, horário e
+  assunto (ignorando maiúsculas, acentos e espaçamento) em uma só, preservando as anotações de
+  todas antes de apagar as repetidas. Roda também sozinho, uma vez, quando o app carrega — cobre
+  o caso comum de importar o mesmo plano duas vezes.
 
 ## Formatos de plano de ensino reconhecidos
 

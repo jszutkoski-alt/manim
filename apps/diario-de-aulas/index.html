@@ -882,7 +882,7 @@
 
   // Lê o texto colado e devolve {nome, horario, aulas:[], ignoradas:n}
   function lerPlano(texto, anoPadrao) {
-    const saida = { nome: "", horario: "", curso: "", codigo: "", sala: "", aulas: [], ignoradas: 0 };
+    const saida = { nome: "", horario: "", curso: "", codigo: "", sala: "", aulas: [], ignoradas: 0, duplicadas: 0 };
     if (!texto || !texto.trim()) return saida;
 
     let corpo = texto.replace(/\r\n?/g, "\n");
@@ -945,7 +945,17 @@
       }
     }
 
-    saida.aulas.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+    saida.aulas.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : (a.inicio || "") < (b.inicio || "") ? -1 : 1));
+
+    // linhas repetidas no próprio texto colado (mesma data, horário e assunto)
+    const vistas = new Set();
+    saida.aulas = saida.aulas.filter((a) => {
+      const k = a.data + "|" + (a.inicio || "") + "|" + (a.fim || "") + "|" + chave(a.assunto);
+      if (vistas.has(k)) { saida.duplicadas++; return false; }
+      vistas.add(k);
+      return true;
+    });
+
     if (!saida.horario) {
       const comum = maisComum(saida.aulas.filter((a) => a.inicio).map((a) => faixaHora(a)));
       if (comum) saida.horario = comum;
@@ -1098,7 +1108,7 @@
     let capacidade = null;
     try { capacidade = window.claude && window.claude.use ? await window.claude.use("db") : null; }
     catch (e) { capacidade = null; }
-    if (!capacidade) { estado.pronto = true; agendarDesenho(); return; }
+    if (!capacidade) { estado.pronto = true; agendarDesenho(); verificarDuplicatasAuto(); return; }
 
     bd = capacidade;
     estado.nuvem = true;
@@ -1116,6 +1126,7 @@
       estado.aulas = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
       estado.pronto = true;
       agendarDesenho();
+      verificarDuplicatasAuto();
     }, erroNuvem);
   }
 
@@ -1158,6 +1169,56 @@
       .slice(0, limite);
   }
   function temNota(a) { return !!(a.notas && a.notas.length); }
+
+  // mesma disciplina, data, horário e assunto (ignorando maiúsculas/acentos/pontuação) = a mesma aula
+  function chaveDuplicata(a) {
+    return a.disciplinaId + "|" + a.data + "|" + (a.inicio || "") + "|" + (a.fim || "") + "|" + chave(a.assunto);
+  }
+
+  // Junta aulas duplicadas (opcionalmente restrito a uma disciplina). Mantém a que tem mais
+  // anotações, reunindo as anotações das demais nela antes de apagar as repetidas.
+  async function removerDuplicadas(discId) {
+    const grupos = {};
+    estado.aulas
+      .filter((a) => !discId || a.disciplinaId === discId)
+      .forEach((a) => (grupos[chaveDuplicata(a)] = grupos[chaveDuplicata(a)] || []).push(a));
+
+    let removidas = 0;
+    for (const chaveGrupo in grupos) {
+      const grupo = grupos[chaveGrupo];
+      if (grupo.length < 2) continue;
+
+      grupo.sort((a, b) => (b.notas || []).length - (a.notas || []).length || (a.id < b.id ? -1 : 1));
+      const [manter, ...sobras] = grupo;
+
+      const vistas = new Set();
+      const notas = [];
+      grupo.forEach((a) => (a.notas || []).forEach((n) => {
+        const k = n.texto + "|" + n.em;
+        if (vistas.has(k)) return;
+        vistas.add(k);
+        notas.push(n);
+      }));
+      notas.sort((a, b) => a.em - b.em);
+
+      if (notas.length !== (manter.notas || []).length) await salvarAula(Object.assign({}, manter, { notas: notas }));
+      for (const a of sobras) { await apagarAula(a); removidas++; }
+    }
+    return removidas;
+  }
+
+  // roda uma vez, assim que os dados (locais ou da nuvem) terminam de carregar, para
+  // limpar duplicatas que já existiam — como as de uma disciplina importada duas vezes
+  let dedupeAutoFeita = false;
+  async function verificarDuplicatasAuto() {
+    if (dedupeAutoFeita) return;
+    dedupeAutoFeita = true;
+    const n = await removerDuplicadas(null);
+    if (n) {
+      agendarDesenho();
+      avisar(n > 1 ? n + " aulas duplicadas foram removidas automaticamente." : "1 aula duplicada foi removida automaticamente.");
+    }
+  }
 
   /* ============================================================
      desenho
@@ -1351,6 +1412,7 @@
 
     html += '<div class="folha-acoes" style="margin-top:26px">' +
       '<button class="btn btn-sm" data-acao="exportar-disc" data-disc="' + esc(d.id) + '" type="button">Exportar esta disciplina</button>' +
+      '<button class="btn btn-sm" data-acao="verificar-duplicatas" data-disc="' + esc(d.id) + '" type="button">Verificar duplicatas</button>' +
       '<div class="direita"><button class="btn btn-sm btn-quiet" data-acao="remover-disc" data-disc="' + esc(d.id) + '" type="button">Remover disciplina</button></div>' +
       "</div>";
 
@@ -1466,6 +1528,7 @@
       ).join("") +
       "</tbody></table></div>" +
       (plano.ignoradas ? '<p class="aviso">' + plano.ignoradas + (plano.ignoradas > 1 ? " linhas foram ignoradas" : " linha foi ignorada") + " por não ter data ou assunto.</p>" : "") +
+      (plano.duplicadas ? '<p class="aviso">' + plano.duplicadas + (plano.duplicadas > 1 ? " linhas repetidas foram descartadas" : " linha repetida foi descartada") + " (mesma data, horário e assunto).</p>" : "") +
       (semHora ? '<p class="aviso">' + semHora + (semHora > 1 ? " aulas ficam" : " aula fica") + " com o horário padrão informado acima.</p>" : "");
 
     $("#btn-confirmar").disabled = false;
@@ -1783,6 +1846,12 @@
     else if (acao === "apagar-nota") apagarNota(alvo.dataset.aula, alvo.dataset.nota);
     else if (acao === "exportar-disc") exportar(alvo.dataset.disc);
     else if (acao === "alternar-crono") { estado.todasAsAulas = !estado.todasAsAulas; }
+    else if (acao === "verificar-duplicatas") {
+      removerDuplicadas(alvo.dataset.disc).then((n) => {
+        agendarDesenho();
+        avisar(n ? n + (n > 1 ? " aulas duplicadas foram removidas." : " aula duplicada foi removida.") : "Nenhuma duplicata encontrada.");
+      });
+    }
     else if (acao === "remover-disc") {
       const d = porId(estado.disciplinas, alvo.dataset.disc);
       if (!d) return;
