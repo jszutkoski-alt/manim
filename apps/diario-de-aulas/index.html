@@ -1,0 +1,1615 @@
+<title>Diário de Aulas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+  :root {
+    --bg: #F1F1F4;
+    --surface: #FFFFFF;
+    --surface-2: #F7F7F9;
+    --surface-3: #ECECF0;
+    --ink: #15161A;
+    --ink-2: #5C5F69;
+    --ink-3: #8B8E98;
+    --line: #E2E2E8;
+    --line-strong: #CFD0D8;
+    --accent: #4B5AD4;
+    --accent-ink: #3A47AE;
+    --accent-soft: #EDEFFC;
+    --on-accent: #FFFFFF;
+    --warm: #A8680F;
+    --warm-soft: #FBF0DE;
+    --good: #2B7757;
+    --good-soft: #E5F3EC;
+    --shadow-sm: 0 1px 2px rgba(18, 20, 30, .06), 0 1px 1px rgba(18, 20, 30, .04);
+    --shadow-md: 0 6px 22px rgba(18, 20, 30, .09), 0 1px 2px rgba(18, 20, 30, .05);
+    --shadow-lg: 0 24px 60px rgba(18, 20, 30, .22);
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 18px;
+    --sans: "Instrument Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --serif: "Newsreader", "New York", Georgia, "Times New Roman", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C0D10;
+      --surface: #16171C;
+      --surface-2: #1B1C22;
+      --surface-3: #23242B;
+      --ink: #ECEDF1;
+      --ink-2: #9FA2AC;
+      --ink-3: #70737D;
+      --line: #26272E;
+      --line-strong: #34363E;
+      --accent: #8C96F4;
+      --accent-ink: #A9B1FF;
+      --accent-soft: #1D1F3C;
+      --on-accent: #0C0D10;
+      --warm: #DFA659;
+      --warm-soft: #2B2317;
+      --good: #5EBE94;
+      --good-soft: #14261E;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+      --shadow-md: 0 6px 22px rgba(0, 0, 0, .45);
+      --shadow-lg: 0 24px 60px rgba(0, 0, 0, .6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0C0D10;
+    --surface: #16171C;
+    --surface-2: #1B1C22;
+    --surface-3: #23242B;
+    --ink: #ECEDF1;
+    --ink-2: #9FA2AC;
+    --ink-3: #70737D;
+    --line: #26272E;
+    --line-strong: #34363E;
+    --accent: #8C96F4;
+    --accent-ink: #A9B1FF;
+    --accent-soft: #1D1F3C;
+    --on-accent: #0C0D10;
+    --warm: #DFA659;
+    --warm-soft: #2B2317;
+    --good: #5EBE94;
+    --good-soft: #14261E;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .5);
+    --shadow-md: 0 6px 22px rgba(0, 0, 0, .45);
+    --shadow-lg: 0 24px 60px rgba(0, 0, 0, .6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  /* ---------- barra superior ---------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--serif);
+    font-size: 19px;
+    letter-spacing: -.01em;
+    white-space: nowrap;
+  }
+  .brand em { font-style: italic; color: var(--accent); }
+  .brand-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+  .tabs-rail {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs-rail::-webkit-scrollbar { display: none; }
+  .tabs {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--surface-3);
+    border-radius: 11px;
+    min-width: min-content;
+  }
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 13px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-2);
+    white-space: nowrap;
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+  }
+  .tab .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--tab-cor, var(--ink-3));
+    flex: none;
+  }
+  .tab-add { font-size: 16px; line-height: 1; padding: 6px 12px; color: var(--ink-3); }
+  .tab-add:hover { color: var(--accent); }
+
+  /* ---------- botões ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 500;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-sm);
+    transition: background .15s ease, transform .1s ease, border-color .15s ease;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { transform: scale(.98); }
+  .btn-primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: var(--on-accent);
+  }
+  .btn-primary:hover { background: var(--accent-ink); }
+  .btn-primary[disabled] { opacity: .45; pointer-events: none; }
+  .btn-quiet {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--ink-2);
+  }
+  .btn-quiet:hover { background: var(--surface-3); color: var(--ink); }
+  .btn-sm { padding: 5px 10px; font-size: 12.5px; }
+
+  /* ---------- estrutura ---------- */
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding-block: 32px 80px;
+    padding-inline: 20px;
+  }
+  .page-head { margin-bottom: 26px; }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(28px, 4vw, 36px);
+    font-weight: 400;
+    letter-spacing: -.02em;
+    margin: 4px 0 0;
+    text-wrap: balance;
+  }
+  .page-head p { margin: 8px 0 0; color: var(--ink-2); max-width: 62ch; }
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 12px;
+  }
+
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- painel ---------- */
+  .painel { display: grid; gap: 34px; }
+  .dia-grupo + .dia-grupo { margin-top: 22px; }
+  .dia-label {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 10px;
+  }
+  .dia-label strong { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .dia-label span { font-size: 12.5px; color: var(--ink-3); }
+  .dia-label.hoje strong { color: var(--warm); }
+
+  .linha {
+    display: grid;
+    grid-template-columns: 68px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 11px 12px;
+    border-radius: var(--r-md);
+    transition: background .15s ease;
+  }
+  .linha:hover { background: var(--surface); }
+  .linha .hora { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+  .linha .conteudo { min-width: 0; }
+  .linha .assunto {
+    font-family: var(--serif);
+    font-size: 16.5px;
+    letter-spacing: -.01em;
+    display: block;
+  }
+  .linha .disc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    margin-top: 2px;
+  }
+  .linha .disc .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .linha .seta { color: var(--ink-3); font-size: 15px; }
+
+  .destaque {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    gap: 22px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .destaque .quando {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--warm);
+  }
+  .destaque h3 {
+    font-family: var(--serif);
+    font-size: 25px;
+    font-weight: 400;
+    letter-spacing: -.02em;
+    margin: 6px 0 0;
+    text-wrap: balance;
+  }
+  .destaque .detalhe { margin-top: 8px; color: var(--ink-2); font-size: 13.5px; }
+  .destaque .lado { margin-left: auto; }
+
+  .progresso { display: grid; gap: 2px; }
+  .prog-linha {
+    display: grid;
+    grid-template-columns: 1fr 120px 74px;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: var(--r-md);
+    transition: background .15s ease;
+  }
+  .prog-linha:hover { background: var(--surface); }
+  .prog-nome { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; min-width: 0; }
+  .prog-nome .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .prog-nome span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barra { height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+  .barra i { display: block; height: 100%; border-radius: 3px; }
+  .prog-num { font-size: 12.5px; color: var(--ink-3); text-align: right; }
+
+  /* ---------- cards de aula ---------- */
+  .aulas { display: grid; gap: 14px; }
+  .aula {
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    gap: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .aula[data-estado="proxima"] {
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+    box-shadow: var(--shadow-md);
+  }
+  .aula[data-estado="hoje"] {
+    border-color: color-mix(in srgb, var(--warm) 48%, var(--line));
+    box-shadow: var(--shadow-md);
+  }
+  .aula[data-estado="passada"] { background: var(--surface-2); }
+
+  .cal {
+    text-align: center;
+    padding-top: 2px;
+    border-right: 1px solid var(--line);
+    margin-right: -6px;
+  }
+  .cal .dow { display: block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .cal .dia { display: block; font-size: 29px; font-weight: 600; letter-spacing: -.03em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .cal .mes { display: block; font-size: 11.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+  .aula[data-estado="hoje"] .cal .dia { color: var(--warm); }
+  .aula[data-estado="proxima"] .cal .dia { color: var(--accent); }
+
+  .aula-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2.5px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .pill-proxima { background: var(--accent-soft); color: var(--accent-ink); }
+  .pill-hoje { background: var(--warm-soft); color: var(--warm); }
+  .pill-passada { background: var(--surface-3); color: var(--ink-3); }
+  .pill-nota { background: var(--good-soft); color: var(--good); }
+  .aula-meta .hora { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .aula-meta .unidade { font-size: 12.5px; color: var(--ink-3); }
+
+  .aula h3 {
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 400;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .notas { display: grid; gap: 8px; margin-top: 16px; }
+  .nota {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 11px 13px;
+    background: var(--surface-2);
+    border-radius: var(--r-md);
+    border: 1px solid var(--line);
+  }
+  .aula[data-estado="passada"] .nota { background: var(--surface); }
+  .nota p { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .nota time { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .nota .apagar { margin-left: auto; color: var(--ink-3); font-size: 15px; line-height: 1; padding: 2px 4px; flex: none; }
+  .nota .apagar:hover { color: #C2453B; }
+
+  .compositor { margin-top: 14px; display: grid; gap: 10px; }
+  textarea, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    padding: 11px 13px;
+    font-size: 14px;
+    resize: vertical;
+  }
+  textarea::placeholder, input::placeholder { color: var(--ink-3); }
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .compositor-acoes { display: flex; align-items: center; gap: 10px; }
+  .dica { font-size: 12px; color: var(--ink-3); margin-left: auto; }
+
+  /* ---------- cronograma ---------- */
+  details.crono { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 16px; }
+  details.crono > summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  details.crono > summary::-webkit-details-marker { display: none; }
+  details.crono > summary::before { content: "▸"; transition: transform .18s ease; }
+  details.crono[open] > summary::before { transform: rotate(90deg); }
+  .crono-tabela { margin-top: 14px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 0 12px 8px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.data { font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+  tr.feita td { color: var(--ink-3); }
+  tr.atual td { background: var(--accent-soft); }
+  tr.atual td:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); padding-left: 8px; }
+  tr.atual td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+
+  /* ---------- vazio ---------- */
+  .vazio {
+    text-align: center;
+    padding: 56px 24px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--r-lg);
+    background: var(--surface-2);
+  }
+  .vazio h3 { font-family: var(--serif); font-size: 22px; font-weight: 400; margin: 0 0 8px; }
+  .vazio p { color: var(--ink-2); margin: 0 auto 18px; max-width: 44ch; }
+
+  /* ---------- importador ---------- */
+  .capa {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(12, 13, 16, .42);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  .folha {
+    width: min(760px, 100%);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    padding: 26px 28px 24px;
+    margin: auto;
+  }
+  .folha-topo { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+  .folha-topo h2 {
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 400;
+    letter-spacing: -.02em;
+    text-transform: none;
+    color: var(--ink);
+    margin: 0;
+  }
+  .folha-topo p { margin: 5px 0 0; font-size: 13.5px; color: var(--ink-2); max-width: 56ch; }
+  .fechar { margin-left: auto; font-size: 20px; line-height: 1; color: var(--ink-3); padding: 2px 6px; }
+  .fechar:hover { color: var(--ink); }
+
+  .campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .campo { display: grid; gap: 5px; }
+  .campo label { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .cores { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding-top: 2px; }
+  .cor-op {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    transition: transform .12s ease;
+  }
+  .cor-op[aria-pressed="true"] { border-color: var(--ink); transform: scale(1.12); }
+
+  #entrada { min-height: 168px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.6; }
+
+  .previa {
+    margin-top: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface-2);
+    padding: 14px 16px;
+  }
+  .previa-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .previa-topo strong { font-size: 13.5px; }
+  .previa-lista { max-height: 210px; overflow-y: auto; }
+  .previa-lista table { font-size: 12.5px; }
+  .previa-lista td, .previa-lista th { padding-right: 10px; }
+  .aviso { font-size: 12.5px; color: var(--warm); margin-top: 8px; }
+  .folha-acoes { display: flex; gap: 10px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+  .folha-acoes .direita { margin-left: auto; display: flex; gap: 10px; }
+
+  /* ---------- aviso flutuante ---------- */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translate(-50%, 12px);
+    z-index: 120;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 500;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease, transform .22s ease;
+  }
+  #toast.visivel { opacity: 1; transform: translate(-50%, 0); }
+
+  .aviso-armazenamento {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    background: var(--warm-soft);
+    border: 1px solid color-mix(in srgb, var(--warm) 30%, transparent);
+    border-radius: var(--r-md);
+    padding: 9px 13px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 620px) {
+    .aula { grid-template-columns: 52px 1fr; gap: 14px; padding: 17px 16px; }
+    .cal .dia { font-size: 25px; }
+    .linha { grid-template-columns: 58px 1fr; }
+    .linha .seta { display: none; }
+    .prog-linha { grid-template-columns: 1fr 68px; }
+    .prog-linha .barra { display: none; }
+    .destaque { padding: 18px; }
+    .destaque .lado { margin-left: 0; }
+    .folha { padding: 20px 18px; border-radius: 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
+</style>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      Diário de <em>Aulas</em>
+      <span class="brand-sub" id="periodo-atual"></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-sm" id="btn-exportar" type="button">Exportar</button>
+      <button class="btn btn-sm btn-primary" id="btn-importar" type="button">Importar plano</button>
+    </div>
+  </div>
+  <div class="tabs-rail">
+    <nav class="tabs" id="abas" role="tablist" aria-label="Disciplinas"></nav>
+  </div>
+</header>
+
+<main id="conteudo"></main>
+
+<div class="capa" id="capa-importador" hidden>
+  <div class="folha" role="dialog" aria-modal="true" aria-labelledby="titulo-importador">
+    <div class="folha-topo">
+      <div>
+        <h2 id="titulo-importador">Importar plano de ensino</h2>
+        <p>Cole o markdown da nota do Obsidian. Reconhece tabelas e listas, datas em dd/mm, dd/mm/aaaa ou aaaa-mm-dd, horários e unidades marcadas com <code>##</code>.</p>
+      </div>
+      <button class="fechar" id="fechar-importador" type="button" aria-label="Fechar">✕</button>
+    </div>
+
+    <textarea id="entrada" spellcheck="false" placeholder="Cole aqui o plano de ensino…"></textarea>
+
+    <div class="campos">
+      <div class="campo">
+        <label for="campo-nome">Disciplina</label>
+        <input type="text" id="campo-nome" placeholder="Nome da disciplina">
+      </div>
+      <div class="campo">
+        <label for="campo-horario">Horário padrão</label>
+        <input type="text" id="campo-horario" placeholder="19:00–20:40">
+      </div>
+      <div class="campo">
+        <label for="campo-ano">Ano das datas sem ano</label>
+        <input type="number" id="campo-ano" min="2000" max="2100" step="1">
+      </div>
+      <div class="campo">
+        <label>Cor</label>
+        <div class="cores" id="cores"></div>
+      </div>
+    </div>
+
+    <div class="previa" id="previa"></div>
+
+    <div class="folha-acoes">
+      <button class="btn btn-sm" id="btn-exemplo" type="button">Carregar exemplo</button>
+      <div class="direita">
+        <button class="btn" id="btn-cancelar" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="btn-confirmar" type="button" disabled>Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     utilidades
+     ============================================================ */
+
+  const $ = (sel, raiz) => (raiz || document).querySelector(sel);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+  const id = () => (crypto.randomUUID ? crypto.randomUUID() : "x" + Math.random().toString(36).slice(2) + Date.now().toString(36));
+  const chave = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+  const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  const DIAS_LONGOS = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+  const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const MESES_LONGOS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+  const CORES = ["#4B5AD4", "#1F7A6C", "#B4552B", "#7B4BC4", "#2C6FBF", "#A03D63", "#4E7B22", "#8A6A1E"];
+
+  function isoDe(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function dataDe(iso) {
+    const p = String(iso).split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+  const HOJE = isoDe(new Date());
+
+  function partes(iso) {
+    const d = dataDe(iso);
+    return {
+      dow: DIAS[d.getDay()],
+      dowLongo: DIAS_LONGOS[d.getDay()],
+      dia: String(d.getDate()).padStart(2, "0"),
+      mes: MESES[d.getMonth()],
+      mesLongo: MESES_LONGOS[d.getMonth()],
+      ano: d.getFullYear()
+    };
+  }
+  function dataExtenso(iso) {
+    const p = partes(iso);
+    return p.dowLongo + ", " + (+p.dia) + " de " + p.mesLongo;
+  }
+  function dataCurta(iso) {
+    const p = partes(iso);
+    return p.dia + "/" + String(dataDe(iso).getMonth() + 1).padStart(2, "0") + "/" + p.ano;
+  }
+  function distancia(iso) {
+    const dias = Math.round((dataDe(iso) - dataDe(HOJE)) / 86400000);
+    if (dias === 0) return "hoje";
+    if (dias === 1) return "amanhã";
+    if (dias === -1) return "ontem";
+    if (dias > 0) return "em " + dias + " dias";
+    return "há " + Math.abs(dias) + " dias";
+  }
+  function faixaHora(a) {
+    if (!a.inicio) return "";
+    return a.fim ? a.inicio + "–" + a.fim : a.inicio;
+  }
+  function carimbo(ts) {
+    const d = new Date(ts);
+    if (isNaN(d)) return "";
+    return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " às " +
+      String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  let toastTimer = null;
+  function avisar(msg) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("visivel");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("visivel"), 2800);
+  }
+
+  /* ============================================================
+     leitor do plano de ensino
+     ============================================================ */
+
+  const MESES_MAPA = {};
+  MESES.forEach((m, i) => { MESES_MAPA[m] = i + 1; });
+  MESES_MAPA["set"] = 9; MESES_MAPA["sep"] = 9;
+
+  function lerData(bruto, anoPadrao) {
+    const txt = String(bruto || "").trim();
+    let m = txt.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return montar(+m[1], +m[2], +m[3]);
+    m = txt.match(/(\d{1,2})\s*[\/\.\-]\s*(\d{1,2})(?:\s*[\/\.\-]\s*(\d{2,4}))?/);
+    if (m) {
+      let ano = anoPadrao;
+      if (m[3]) ano = m[3].length === 2 ? 2000 + (+m[3]) : +m[3];
+      return montar(ano, +m[2], +m[1]);
+    }
+    m = txt.match(/(\d{1,2})\s*(?:de\s+)?([a-zà-ÿ]{3,})/i);
+    if (m) {
+      const mes = MESES_MAPA[m[2].slice(0, 3).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")];
+      if (mes) return montar(anoPadrao, mes, +m[1]);
+    }
+    return null;
+  }
+  function montar(ano, mes, dia) {
+    if (!ano || !mes || !dia || mes > 12 || dia > 31) return null;
+    return ano + "-" + String(mes).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
+  }
+
+  function lerHorario(bruto) {
+    const achados = [];
+    const re = /(\d{1,2})\s*(?:[:h])\s*(\d{2})?/gi;
+    let m;
+    while ((m = re.exec(String(bruto || "")))) {
+      const h = +m[1];
+      if (h > 23) continue;
+      achados.push(String(h).padStart(2, "0") + ":" + (m[2] || "00"));
+    }
+    if (!achados.length) return null;
+    return { inicio: achados[0], fim: achados[1] || null };
+  }
+  const PARECE_HORA = /^\s*\d{1,2}\s*[:h]\s*\d{0,2}\s*(?:(?:às|as|a|-|–|—|até)\s*\d{1,2}\s*[:h]?\s*\d{0,2})?\s*(?:h|hs|horas)?\s*$/i;
+
+  function limpar(txt) {
+    return String(txt || "")
+      .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2")
+      .replace(/\[\[([^\]]+)\]\]/g, "$1")
+      .replace(/\*\*|__|`/g, "")
+      .replace(/^\s*[-*+]\s+/, "")
+      .replace(/^\s*\d+[\.\)]\s+/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // Lê o texto colado e devolve {nome, horario, aulas:[], ignoradas:n}
+  function lerPlano(texto, anoPadrao) {
+    const saida = { nome: "", horario: "", aulas: [], ignoradas: 0 };
+    if (!texto || !texto.trim()) return saida;
+
+    let corpo = texto.replace(/\r\n?/g, "\n");
+
+    // frontmatter
+    const fm = corpo.match(/^---\n([\s\S]*?)\n---\n?/);
+    if (fm) {
+      corpo = corpo.slice(fm[0].length);
+      fm[1].split("\n").forEach((linha) => {
+        const p = linha.match(/^\s*([\w\-À-ſ]+)\s*:\s*(.+?)\s*$/);
+        if (!p) return;
+        const k = chave(p[1]);
+        const v = p[2].replace(/^["']|["']$/g, "").trim();
+        if (!saida.nome && ["disciplina", "nome", "title", "titulo", "materia", "componente"].includes(k)) saida.nome = v;
+        if (!saida.horario && ["horario", "hora", "aula", "encontro"].includes(k)) saida.horario = v;
+      });
+    }
+
+    const linhas = corpo.split("\n");
+    let unidade = "";
+    let colunas = null;
+
+    for (let i = 0; i < linhas.length; i++) {
+      const bruta = linhas[i];
+      const linha = bruta.trim();
+      if (!linha) continue;
+
+      // títulos
+      const h = linha.match(/^(#{1,6})\s+(.*)$/);
+      if (h) {
+        const titulo = limpar(h[2]);
+        if (h[1].length === 1 && !saida.nome) saida.nome = titulo;
+        else if (h[1].length >= 2) unidade = titulo;
+        colunas = null;
+        continue;
+      }
+
+      // tabelas
+      if (linha.startsWith("|")) {
+        const celulas = linha.replace(/^\||\|$/g, "").split("|").map((c) => limpar(c));
+        if (celulas.every((c) => /^:?-{2,}:?$/.test(c.replace(/\s/g, "")))) continue;
+        if (!colunas) {
+          const mapa = mapearColunas(celulas);
+          if (mapa) { colunas = mapa; continue; }
+          colunas = { data: 0, hora: -1, assunto: 1, unidade: -1 };
+        }
+        const aula = daTabela(celulas, colunas, anoPadrao, unidade);
+        if (aula) saida.aulas.push(aula); else if (celulas.join("")) saida.ignoradas++;
+        continue;
+      }
+      colunas = null;
+
+      // listas e linhas soltas
+      if (/^[-*+]\s+/.test(linha) || /^\d+[\.\)]\s+/.test(linha) || /^\d{1,4}[\/\-]/.test(linha)) {
+        const aula = daLinha(linha, anoPadrao, unidade);
+        if (aula) saida.aulas.push(aula); else saida.ignoradas++;
+      }
+    }
+
+    saida.aulas.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+    if (!saida.horario) {
+      const comum = maisComum(saida.aulas.filter((a) => a.inicio).map((a) => faixaHora(a)));
+      if (comum) saida.horario = comum;
+    }
+    return saida;
+  }
+
+  function mapearColunas(celulas) {
+    const mapa = { data: -1, hora: -1, assunto: -1, unidade: -1 };
+    celulas.forEach((c, i) => {
+      const k = chave(c);
+      if (mapa.data < 0 && /^(data|dia|datas|encontro|quando)$/.test(k)) mapa.data = i;
+      else if (mapa.hora < 0 && /^(horario|hora|horas|hora inicio|periodo)$/.test(k)) mapa.hora = i;
+      else if (mapa.assunto < 0 && /(assunto|conteudo|tema|topico|descricao|atividade|aula)/.test(k)) mapa.assunto = i;
+      else if (mapa.unidade < 0 && /(unidade|modulo|etapa|bloco|semana)/.test(k)) mapa.unidade = i;
+    });
+    if (mapa.data < 0 || mapa.assunto < 0) return null;
+    return mapa;
+  }
+
+  function daTabela(celulas, col, anoPadrao, unidade) {
+    const data = lerData(celulas[col.data], anoPadrao);
+    if (!data) return null;
+    const assunto = limpar(celulas[col.assunto] || "");
+    if (!assunto) return null;
+    const hr = col.hora >= 0 ? lerHorario(celulas[col.hora]) : null;
+    return {
+      data: data,
+      inicio: hr ? hr.inicio : null,
+      fim: hr ? hr.fim : null,
+      assunto: assunto,
+      unidade: col.unidade >= 0 ? limpar(celulas[col.unidade] || "") : unidade
+    };
+  }
+
+  const SEPARADOR = /^[\s—–\-|;:.·]+/;
+
+  function daLinha(linha, anoPadrao, unidade) {
+    let resto = limpar(linha);
+    const achouData = resto.match(/^(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}\s*[\/.]\s*\d{1,2}(?:\s*[\/.]\s*\d{2,4})?|\d{1,2}\s*(?:de\s+)?[a-zà-ÿ]{3,}\.?(?:\s+de\s+\d{4})?)/i);
+    if (!achouData) return null;
+    const data = lerData(achouData[1], anoPadrao);
+    if (!data) return null;
+    resto = resto.slice(achouData[0].length).replace(SEPARADOR, "");
+
+    let hr = null;
+    const achouHora = resto.match(/^\d{1,2}\s*[:h]\s*\d{0,2}(?:\s*(?:às|as|até|a|-|–|—)\s*\d{1,2}\s*[:h]?\s*\d{0,2})?\s*(?:h|hs|horas)?/i);
+    if (achouHora) {
+      hr = lerHorario(achouHora[0]);
+      resto = resto.slice(achouHora[0].length).replace(SEPARADOR, "");
+    }
+
+    const assunto = resto.trim();
+    if (!assunto) return null;
+    return { data: data, inicio: hr ? hr.inicio : null, fim: hr ? hr.fim : null, assunto: assunto, unidade: unidade };
+  }
+
+  function maisComum(lista) {
+    const contagem = {};
+    let melhor = "", maior = 0;
+    lista.forEach((v) => {
+      if (!v) return;
+      contagem[v] = (contagem[v] || 0) + 1;
+      if (contagem[v] > maior) { maior = contagem[v]; melhor = v; }
+    });
+    return melhor;
+  }
+
+  /* ============================================================
+     estado e armazenamento
+     ============================================================ */
+
+  const estado = {
+    disciplinas: [],
+    aulas: [],
+    aba: "painel",
+    pronto: false,
+    nuvem: false,
+    abertos: new Set(),
+    rascunhos: {},
+    todasAsAulas: false
+  };
+
+  const CHAVE_LOCAL = "diario-de-aulas-v1";
+  let bd = null;
+
+  function guardarLocal() {
+    try {
+      localStorage.setItem(CHAVE_LOCAL, JSON.stringify({ disciplinas: estado.disciplinas, aulas: estado.aulas }));
+    } catch (e) { /* armazenamento indisponível: segue em memória */ }
+  }
+  function lerLocal() {
+    try {
+      const cru = localStorage.getItem(CHAVE_LOCAL);
+      if (!cru) return;
+      const dados = JSON.parse(cru);
+      estado.disciplinas = dados.disciplinas || [];
+      estado.aulas = dados.aulas || [];
+    } catch (e) { /* ignora dados corrompidos */ }
+  }
+
+  function porId(lista, alvo) { return lista.find((x) => x.id === alvo) || null; }
+
+  function trocar(lista, obj) {
+    const i = lista.findIndex((x) => x.id === obj.id);
+    if (i >= 0) lista[i] = obj; else lista.push(obj);
+  }
+
+  async function salvarDisciplina(d) {
+    trocar(estado.disciplinas, d);
+    if (bd) { try { await bd.doc("disciplinas/" + d.id).set(semId(d)); } catch (e) { falhaEscrita(e); } }
+    else { guardarLocal(); agendarDesenho(); }
+  }
+  async function salvarAula(a) {
+    trocar(estado.aulas, a);
+    if (bd) { try { await bd.doc("aulas/" + a.id).set(semId(a)); } catch (e) { falhaEscrita(e); } }
+    else { guardarLocal(); agendarDesenho(); }
+  }
+  async function apagarAula(a) {
+    estado.aulas = estado.aulas.filter((x) => x.id !== a.id);
+    if (bd) { try { await bd.doc("aulas/" + a.id).delete(); } catch (e) { falhaEscrita(e); } }
+    else { guardarLocal(); agendarDesenho(); }
+  }
+  async function apagarDisciplina(d) {
+    const filhas = estado.aulas.filter((a) => a.disciplinaId === d.id);
+    estado.disciplinas = estado.disciplinas.filter((x) => x.id !== d.id);
+    estado.aulas = estado.aulas.filter((a) => a.disciplinaId !== d.id);
+    if (bd) {
+      try {
+        await Promise.all(filhas.map((a) => bd.doc("aulas/" + a.id).delete()));
+        await bd.doc("disciplinas/" + d.id).delete();
+      } catch (e) { falhaEscrita(e); }
+    } else { guardarLocal(); }
+    estado.aba = "painel";
+    agendarDesenho();
+  }
+  function semId(obj) {
+    const copia = Object.assign({}, obj);
+    delete copia.id;
+    return copia;
+  }
+  function falhaEscrita(e) {
+    const codigo = e && e.code;
+    if (codigo === "quota_exceeded") avisar("Limite de aulas guardadas atingido. Apague uma disciplina antiga para continuar.");
+    else if (codigo === "revoked" || codigo === "not_granted") avisar("Sem acesso à nuvem agora — as mudanças ficam só nesta sessão.");
+    else avisar("Não consegui salvar. Tente de novo em instantes.");
+  }
+
+  async function ligarNuvem() {
+    let capacidade = null;
+    try { capacidade = window.claude && window.claude.use ? await window.claude.use("db") : null; }
+    catch (e) { capacidade = null; }
+    if (!capacidade) { estado.pronto = true; agendarDesenho(); return; }
+
+    bd = capacidade;
+    estado.nuvem = true;
+    const locais = { disciplinas: estado.disciplinas, aulas: estado.aulas };
+    let primeira = true;
+
+    bd.collection("disciplinas").onSnapshot((snap) => {
+      estado.disciplinas = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+      estado.pronto = true;
+      if (primeira) { primeira = false; migrar(locais); }
+      agendarDesenho();
+    }, erroNuvem);
+
+    bd.collection("aulas").onSnapshot((snap) => {
+      estado.aulas = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+      estado.pronto = true;
+      agendarDesenho();
+    }, erroNuvem);
+  }
+
+  function erroNuvem(e) {
+    estado.nuvem = false;
+    estado.pronto = true;
+    if (e && e.code === "revoked") avisar("A nuvem ficou indisponível. Recarregue a página para tentar de novo.");
+    agendarDesenho();
+  }
+
+  // leva para a nuvem o que tiver ficado salvo só neste navegador
+  async function migrar(locais) {
+    if (!locais.disciplinas.length) return;
+    if (estado.disciplinas.length) return;
+    for (const d of locais.disciplinas) { await salvarDisciplina(d); }
+    for (const a of locais.aulas) { await salvarAula(a); }
+    try { localStorage.removeItem(CHAVE_LOCAL); } catch (e) { /* nada a fazer */ }
+    avisar("Suas disciplinas foram levadas para a nuvem.");
+  }
+
+  /* ============================================================
+     consultas
+     ============================================================ */
+
+  function aulasDe(discId) {
+    return estado.aulas
+      .filter((a) => a.disciplinaId === discId)
+      .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : (a.inicio || "") < (b.inicio || "") ? -1 : 1));
+  }
+  function recorte(discId) {
+    const lista = aulasDe(discId);
+    const proxIdx = lista.findIndex((a) => a.data >= HOJE);
+    if (proxIdx === -1) return { anteriores: lista.slice(-2), proxima: null };
+    return { anteriores: lista.slice(Math.max(0, proxIdx - 2), proxIdx), proxima: lista[proxIdx] };
+  }
+  function proximas(limite) {
+    return estado.aulas
+      .filter((a) => a.data >= HOJE)
+      .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : (a.inicio || "99") < (b.inicio || "99") ? -1 : 1))
+      .slice(0, limite);
+  }
+  function temNota(a) { return !!(a.notas && a.notas.length); }
+
+  /* ============================================================
+     desenho
+     ============================================================ */
+
+  let quadro = null;
+  function agendarDesenho() {
+    if (quadro) return;
+    quadro = requestAnimationFrame(() => { quadro = null; desenhar(); });
+  }
+
+  function desenhar() {
+    const ativo = document.activeElement;
+    const foco = ativo && ativo.dataset ? ativo.dataset.foco : null;
+    const selecao = ativo && ativo.selectionStart;
+
+    if (estado.aba !== "painel" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
+
+    desenharAbas();
+    const alvo = $("#conteudo");
+    alvo.innerHTML = estado.aba === "painel" ? htmlPainel() : htmlDisciplina(porId(estado.disciplinas, estado.aba));
+
+    if (foco) {
+      const recuperado = alvo.querySelector('[data-foco="' + foco + '"]');
+      if (recuperado) {
+        recuperado.focus();
+        if (recuperado.setSelectionRange && selecao != null) {
+          try { recuperado.setSelectionRange(selecao, selecao); } catch (e) { /* campo sem seleção */ }
+        }
+      }
+    }
+    alvo.querySelectorAll("textarea.auto").forEach(ajustarAltura);
+  }
+
+  function desenharAbas() {
+    const abas = $("#abas");
+    const itens = [
+      '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>'
+    ];
+    estado.disciplinas
+      .slice()
+      .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))
+      .forEach((d) => {
+        itens.push(
+          '<button class="tab" role="tab" data-aba="' + esc(d.id) + '" aria-selected="' + (estado.aba === d.id) + '" type="button">' +
+          '<i class="dot" style="background:' + esc(d.cor || "#888") + '"></i>' + esc(nomeCurto(d.nome)) + "</button>"
+        );
+      });
+    itens.push('<button class="tab tab-add" id="aba-nova" type="button" title="Importar plano de ensino" aria-label="Importar plano de ensino">＋</button>');
+    abas.innerHTML = itens.join("");
+
+    const periodo = $("#periodo-atual");
+    const p = partes(HOJE);
+    periodo.textContent = p.dowLongo + ", " + (+p.dia) + " " + p.mes;
+  }
+
+  function nomeCurto(nome) {
+    const limpo = String(nome || "Disciplina").trim();
+    return limpo.length > 28 ? limpo.slice(0, 27).trimEnd() + "…" : limpo;
+  }
+
+  function htmlAvisoArmazenamento() {
+    if (estado.nuvem || !estado.pronto) return "";
+    return '<p class="aviso-armazenamento">Sem conexão com a nuvem: seus dados estão guardados apenas neste navegador.</p>';
+  }
+
+  function htmlPainel() {
+    if (!estado.pronto) return '<p class="eyebrow">Carregando…</p>';
+    if (!estado.disciplinas.length) {
+      return htmlAvisoArmazenamento() +
+        '<div class="page-head"><span class="eyebrow">Painel</span><h1>Comece pelo plano de ensino</h1>' +
+        "<p>Cole o cronograma de uma disciplina e o diário monta as aulas do semestre — com data, horário e assunto prontos para receber suas anotações.</p></div>" +
+        '<div class="vazio"><h3>Nenhuma disciplina ainda</h3><p>Abra a nota do plano de ensino no Obsidian, copie o cronograma e cole aqui.</p>' +
+        '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
+    }
+
+    const lista = proximas(12);
+    const destaque = lista[0];
+    let html = htmlAvisoArmazenamento() +
+      '<div class="page-head"><span class="eyebrow">Painel</span><h1>Suas próximas aulas</h1></div>';
+
+    if (destaque) {
+      const d = porId(estado.disciplinas, destaque.disciplinaId);
+      html += '<section class="destaque">' +
+        "<div>" +
+        '<span class="quando">' + esc(destaque.data === HOJE ? "Hoje" : "Próxima aula · " + distancia(destaque.data)) + "</span>" +
+        "<h3>" + esc(destaque.assunto) + "</h3>" +
+        '<p class="detalhe">' +
+        (d ? '<i class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + esc(d.cor) + ';margin-right:6px"></i>' + esc(d.nome) + " · " : "") +
+        esc(dataExtenso(destaque.data)) + (faixaHora(destaque) ? " · " + esc(faixaHora(destaque)) : "") +
+        (destaque.unidade ? " · " + esc(destaque.unidade) : "") +
+        "</p></div>" +
+        '<div class="lado"><button class="btn" data-acao="abrir" data-disc="' + esc(destaque.disciplinaId) + '" type="button">Abrir disciplina</button></div>' +
+        "</section>";
+    }
+
+    const restantes = lista.slice(1);
+    if (restantes.length) {
+      html += '<section style="margin-top:34px"><h2>Depois dessa</h2>' + htmlAgenda(restantes) + "</section>";
+    } else if (!destaque) {
+      html += '<div class="vazio"><h3>Semestre encerrado</h3><p>Não há aulas futuras no cronograma. Abra uma disciplina para rever o que já foi dado ou importe um novo plano.</p>' +
+        '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
+    }
+
+    html += '<section style="margin-top:34px"><h2>Andamento do semestre</h2><div class="progresso">' +
+      estado.disciplinas.slice().sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0)).map((d) => {
+        const todas = aulasDe(d.id);
+        const dadas = todas.filter((a) => a.data < HOJE).length;
+        const comNota = todas.filter(temNota).length;
+        const pct = todas.length ? Math.round((dadas / todas.length) * 100) : 0;
+        return '<button class="prog-linha" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">' +
+          '<span class="prog-nome"><i class="dot" style="background:' + esc(d.cor) + '"></i><span>' + esc(d.nome) + "</span></span>" +
+          '<span class="barra"><i style="width:' + pct + "%;background:" + esc(d.cor) + '"></i></span>' +
+          '<span class="prog-num num">' + dadas + "/" + todas.length + (comNota ? " · " + comNota + " ✎" : "") + "</span>" +
+          "</button>";
+      }).join("") + "</div></section>";
+
+    return html;
+  }
+
+  function htmlAgenda(lista) {
+    const grupos = [];
+    lista.forEach((a) => {
+      const ultimo = grupos[grupos.length - 1];
+      if (ultimo && ultimo.data === a.data) ultimo.itens.push(a);
+      else grupos.push({ data: a.data, itens: [a] });
+    });
+    return grupos.map((g) => {
+      const p = partes(g.data);
+      return '<div class="dia-grupo">' +
+        '<div class="dia-label' + (g.data === HOJE ? " hoje" : "") + '"><strong>' + esc(p.dowLongo.replace("-feira", "")) + ", " + (+p.dia) + " de " + esc(p.mesLongo) + "</strong><span>" + esc(distancia(g.data)) + "</span></div>" +
+        g.itens.map((a) => {
+          const d = porId(estado.disciplinas, a.disciplinaId);
+          return '<button class="linha" data-acao="abrir" data-disc="' + esc(a.disciplinaId) + '" type="button">' +
+            '<span class="hora num">' + esc(a.inicio || "—") + "</span>" +
+            '<span class="conteudo"><span class="assunto">' + esc(a.assunto) + "</span>" +
+            '<span class="disc"><i class="dot" style="background:' + esc(d ? d.cor : "#888") + '"></i>' + esc(d ? d.nome : "Disciplina") + (a.unidade ? " · " + esc(a.unidade) : "") + "</span></span>" +
+            '<span class="seta">›</span></button>';
+        }).join("") +
+        "</div>";
+    }).join("");
+  }
+
+  function htmlDisciplina(d) {
+    if (!d) return htmlPainel();
+    const corte = recorte(d.id);
+    const todas = aulasDe(d.id);
+    const cartoes = [];
+    corte.anteriores.forEach((a) => cartoes.push(htmlAula(a, "passada")));
+    if (corte.proxima) cartoes.push(htmlAula(corte.proxima, corte.proxima.data === HOJE ? "hoje" : "proxima"));
+
+    let html = htmlAvisoArmazenamento() +
+      '<div class="page-head"><span class="eyebrow" style="color:' + esc(d.cor) + '">' +
+      esc(d.horario ? d.horario : "Disciplina") + "</span><h1>" + esc(d.nome) + "</h1>" +
+      "<p>" + (corte.proxima
+        ? "A próxima aula é " + esc(distancia(corte.proxima.data)) + ". Abaixo dela, as duas anteriores — registre o que aconteceu enquanto está fresco."
+        : "Todas as aulas do cronograma já aconteceram. Estas são as últimas.") +
+      "</p></div>";
+
+    html += cartoes.length
+      ? '<div class="aulas">' + cartoes.join("") + "</div>"
+      : '<div class="vazio"><h3>Sem aulas no cronograma</h3><p>Importe o plano de ensino outra vez para preencher as datas desta disciplina.</p>' +
+        '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano</button></div>';
+
+    if (todas.length) {
+      html += '<details class="crono"' + (estado.todasAsAulas ? " open" : "") + '><summary data-acao="alternar-crono">Cronograma completo · ' + todas.length + " aulas</summary>" +
+        '<div class="crono-tabela"><table><thead><tr><th>Data</th><th>Horário</th><th>Assunto</th><th>Unidade</th><th>Anotações</th></tr></thead><tbody>' +
+        todas.map((a) => {
+          const classe = a.data < HOJE ? "feita" : (corte.proxima && a.id === corte.proxima.id ? "atual" : "");
+          return '<tr class="' + classe + '"><td class="data">' + esc(dataCurta(a.data)) + "</td>" +
+            '<td class="data">' + esc(faixaHora(a) || "—") + "</td>" +
+            "<td>" + esc(a.assunto) + "</td>" +
+            "<td>" + esc(a.unidade || "—") + "</td>" +
+            '<td class="num">' + (temNota(a) ? a.notas.length : "—") + "</td></tr>";
+        }).join("") +
+        "</tbody></table></div></details>";
+    }
+
+    html += '<div class="folha-acoes" style="margin-top:26px">' +
+      '<button class="btn btn-sm" data-acao="exportar-disc" data-disc="' + esc(d.id) + '" type="button">Exportar esta disciplina</button>' +
+      '<button class="btn btn-sm" data-acao="reimportar" data-disc="' + esc(d.id) + '" type="button">Atualizar cronograma</button>' +
+      '<div class="direita"><button class="btn btn-sm btn-quiet" data-acao="remover-disc" data-disc="' + esc(d.id) + '" type="button">Remover disciplina</button></div>' +
+      "</div>";
+
+    return html;
+  }
+
+  function htmlAula(a, estadoAula) {
+    const p = partes(a.data);
+    const rotulo = estadoAula === "hoje" ? '<span class="pill pill-hoje">Aula de hoje</span>'
+      : estadoAula === "proxima" ? '<span class="pill pill-proxima">Próxima aula</span>'
+      : '<span class="pill pill-passada">' + esc(distancia(a.data)) + "</span>";
+    const aberto = estado.abertos.has(a.id);
+    const rascunho = estado.rascunhos[a.id] || "";
+
+    return '<article class="aula" data-estado="' + estadoAula + '" data-aula="' + esc(a.id) + '">' +
+      '<div class="cal"><span class="dow">' + esc(p.dow) + '</span><span class="dia">' + esc(p.dia) + '</span><span class="mes">' + esc(p.mes) + "</span></div>" +
+      "<div>" +
+      '<div class="aula-meta">' + rotulo +
+      (faixaHora(a) ? '<span class="hora">' + esc(faixaHora(a)) + "</span>" : "") +
+      (a.unidade ? '<span class="unidade">' + esc(a.unidade) + "</span>" : "") +
+      (temNota(a) ? '<span class="pill pill-nota">' + a.notas.length + (a.notas.length > 1 ? " anotações" : " anotação") + "</span>" : "") +
+      "</div>" +
+      "<h3>" + esc(a.assunto) + "</h3>" +
+      (temNota(a) ? '<div class="notas">' + a.notas.map((n) => htmlNota(a, n)).join("") + "</div>" : "") +
+      (aberto
+        ? '<div class="compositor">' +
+          '<textarea class="auto" data-foco="nota-' + esc(a.id) + '" data-campo-nota="' + esc(a.id) + '" rows="3" placeholder="O que aconteceu nesta aula? Conteúdo dado, ritmo da turma, pendências…">' + esc(rascunho) + "</textarea>" +
+          '<div class="compositor-acoes">' +
+          '<button class="btn btn-sm btn-primary" data-acao="salvar-nota" data-aula="' + esc(a.id) + '" type="button">Salvar anotação</button>' +
+          '<button class="btn btn-sm btn-quiet" data-acao="cancelar-nota" data-aula="' + esc(a.id) + '" type="button">Cancelar</button>' +
+          '<span class="dica">⌘/Ctrl + Enter para salvar</span>' +
+          "</div></div>"
+        : '<div class="compositor"><div><button class="btn btn-sm" data-acao="abrir-nota" data-aula="' + esc(a.id) + '" type="button">＋ Adicionar comentário</button></div></div>') +
+      "</div></article>";
+  }
+
+  function htmlNota(a, n) {
+    return '<div class="nota"><div><p>' + esc(n.texto) + "</p><time>" + esc(carimbo(n.em)) + "</time></div>" +
+      '<button class="apagar" data-acao="apagar-nota" data-aula="' + esc(a.id) + '" data-nota="' + esc(n.id) + '" type="button" aria-label="Apagar anotação" title="Apagar anotação">✕</button></div>';
+  }
+
+  function ajustarAltura(area) {
+    area.style.height = "auto";
+    area.style.height = Math.min(area.scrollHeight + 2, 320) + "px";
+  }
+
+  /* ============================================================
+     importador
+     ============================================================ */
+
+  const imp = { plano: null, cor: CORES[0], alvo: null };
+
+  function abrirImportador(discId) {
+    const d = discId ? porId(estado.disciplinas, discId) : null;
+    imp.alvo = d ? d.id : null;
+    imp.cor = d ? (d.cor || CORES[estado.disciplinas.length % CORES.length]) : CORES[estado.disciplinas.length % CORES.length];
+
+    $("#titulo-importador").textContent = d ? "Atualizar cronograma" : "Importar plano de ensino";
+    $("#entrada").value = "";
+    $("#campo-nome").value = d ? d.nome : "";
+    $("#campo-horario").value = d ? (d.horario || "") : "";
+    $("#campo-ano").value = new Date().getFullYear();
+    desenharCores();
+    $("#capa-importador").hidden = false;
+    document.body.style.overflow = "hidden";
+    atualizarPrevia();
+    setTimeout(() => $("#entrada").focus(), 30);
+  }
+
+  function fecharImportador() {
+    $("#capa-importador").hidden = true;
+    document.body.style.overflow = "";
+    imp.plano = null;
+    imp.alvo = null;
+  }
+
+  function desenharCores() {
+    $("#cores").innerHTML = CORES.map((c) =>
+      '<button class="cor-op" type="button" data-cor="' + c + '" aria-pressed="' + (c === imp.cor) + '" aria-label="Cor ' + c + '" style="background:' + c + '"></button>'
+    ).join("");
+  }
+
+  function atualizarPrevia() {
+    const texto = $("#entrada").value;
+    const ano = +$("#campo-ano").value || new Date().getFullYear();
+    const plano = lerPlano(texto, ano);
+    imp.plano = plano;
+
+    if (plano.nome && !$("#campo-nome").value.trim()) $("#campo-nome").value = plano.nome;
+    if (plano.horario && !$("#campo-horario").value.trim()) $("#campo-horario").value = plano.horario;
+
+    const caixa = $("#previa");
+    const total = plano.aulas.length;
+
+    if (!texto.trim()) {
+      caixa.innerHTML = '<p style="margin:0;font-size:13px;color:var(--ink-3)">A prévia das aulas aparece aqui assim que você colar o plano.</p>';
+      $("#btn-confirmar").disabled = true;
+      return;
+    }
+    if (!total) {
+      caixa.innerHTML = '<p style="margin:0;font-size:13px;color:var(--warm)">Não encontrei nenhuma aula com data. Verifique se cada aula tem uma data no começo da linha ou uma coluna <strong>Data</strong> na tabela.</p>';
+      $("#btn-confirmar").disabled = true;
+      return;
+    }
+
+    const semHora = plano.aulas.filter((a) => !a.inicio).length;
+    caixa.innerHTML =
+      '<div class="previa-topo"><strong>' + total + (total > 1 ? " aulas encontradas" : " aula encontrada") + "</strong>" +
+      '<span style="font-size:12.5px;color:var(--ink-3)">' + esc(dataCurta(plano.aulas[0].data)) + " a " + esc(dataCurta(plano.aulas[total - 1].data)) + "</span></div>" +
+      '<div class="previa-lista"><table><thead><tr><th>Data</th><th>Horário</th><th>Assunto</th><th>Unidade</th></tr></thead><tbody>' +
+      plano.aulas.map((a) =>
+        '<tr><td class="data">' + esc(dataCurta(a.data)) + '</td><td class="data">' + esc(faixaHora(a) || "—") + "</td><td>" + esc(a.assunto) + "</td><td>" + esc(a.unidade || "—") + "</td></tr>"
+      ).join("") +
+      "</tbody></table></div>" +
+      (plano.ignoradas ? '<p class="aviso">' + plano.ignoradas + (plano.ignoradas > 1 ? " linhas foram ignoradas" : " linha foi ignorada") + " por não ter data ou assunto.</p>" : "") +
+      (semHora ? '<p class="aviso">' + semHora + (semHora > 1 ? " aulas ficam" : " aula fica") + " com o horário padrão informado acima.</p>" : "");
+
+    $("#btn-confirmar").disabled = false;
+    $("#btn-confirmar").textContent = (imp.alvo ? "Atualizar " : "Importar ") + total + (total > 1 ? " aulas" : " aula");
+  }
+
+  async function confirmarImportacao() {
+    const plano = imp.plano;
+    if (!plano || !plano.aulas.length) return;
+
+    const nome = $("#campo-nome").value.trim() || plano.nome || "Nova disciplina";
+    const horario = $("#campo-horario").value.trim();
+    const padrao = horario ? lerHorario(horario) : null;
+
+    let disciplina = imp.alvo ? porId(estado.disciplinas, imp.alvo) : null;
+    if (!disciplina) {
+      disciplina = estado.disciplinas.find((d) => chave(d.nome) === chave(nome)) || null;
+    }
+    const novaDisc = !disciplina;
+    disciplina = Object.assign({}, disciplina || { id: id(), criadoEm: Date.now() }, { nome: nome, horario: horario, cor: imp.cor });
+
+    const anteriores = novaDisc ? [] : aulasDe(disciplina.id);
+    const porData = {};
+    const porAssunto = {};
+    anteriores.forEach((a) => {
+      if (temNota(a)) { porData[a.data] = a; porAssunto[chave(a.assunto)] = a; }
+    });
+
+    const novas = plano.aulas.map((a, i) => {
+      const herda = porData[a.data] || porAssunto[chave(a.assunto)] || null;
+      return {
+        id: (herda && herda.id) || id(),
+        disciplinaId: disciplina.id,
+        data: a.data,
+        inicio: a.inicio || (padrao ? padrao.inicio : null),
+        fim: a.fim || (padrao ? padrao.fim : null),
+        assunto: a.assunto,
+        unidade: a.unidade || "",
+        ordem: i,
+        notas: (herda && herda.notas) || []
+      };
+    });
+
+    const mantidos = new Set(novas.map((a) => a.id));
+    const remover = anteriores.filter((a) => !mantidos.has(a.id));
+
+    await salvarDisciplina(disciplina);
+    for (const a of remover) { await apagarAula(a); }
+    for (const a of novas) { await salvarAula(a); }
+
+    const herdadas = novas.filter((a) => a.notas.length).length;
+    estado.aba = disciplina.id;
+    fecharImportador();
+    agendarDesenho();
+    avisar(novas.length + (novas.length > 1 ? " aulas importadas" : " aula importada") +
+      (herdadas ? " · " + herdadas + (herdadas > 1 ? " aulas mantiveram suas anotações" : " aula manteve suas anotações") : ""));
+  }
+
+  function exemplo() {
+    const base = new Date();
+    const assuntos = [
+      ["1", "Integral indefinida: primitivas e notação"],
+      ["1", "Técnicas de integração: substituição"],
+      ["1", "Integração por partes"],
+      ["2", "Integral definida e o Teorema Fundamental do Cálculo"],
+      ["2", "Áreas entre curvas"],
+      ["2", "Volumes por discos e cascas cilíndricas"],
+      ["3", "Integrais impróprias"],
+      ["3", "Sequências e séries numéricas"]
+    ];
+    // aulas semanais: três já aconteceram, a próxima é a mais recente à frente de hoje
+    const inicio = new Date(base.getFullYear(), base.getMonth(), base.getDate() - 21);
+    let unidadeAtual = "";
+    let texto = "---\ndisciplina: Cálculo Diferencial e Integral II\nhorario: 19:00–20:40\n---\n\n# Cálculo Diferencial e Integral II\n";
+    assuntos.forEach((par, i) => {
+      const d = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + i * 7);
+      if (par[0] !== unidadeAtual) {
+        unidadeAtual = par[0];
+        texto += "\n## Unidade " + unidadeAtual + "\n\n| Data | Horário | Assunto |\n| --- | --- | --- |\n";
+      }
+      texto += "| " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear() +
+        " | 19:00–20:40 | " + par[1] + " |\n";
+    });
+    return texto;
+  }
+
+  /* ============================================================
+     exportação para o Obsidian
+     ============================================================ */
+
+  function markdownDe(discId) {
+    const alvos = discId ? [porId(estado.disciplinas, discId)].filter(Boolean) : estado.disciplinas.slice();
+    const agora = new Date();
+    let md = "---\ntipo: diario-de-aulas\nexportado: " + isoDe(agora) + "\n---\n\n";
+    md += "# Diário de aulas\n\n> Exportado em " + dataCurta(isoDe(agora)) + ".\n";
+
+    alvos.forEach((d) => {
+      const lista = aulasDe(d.id);
+      md += "\n## " + d.nome + "\n";
+      if (d.horario) md += "\n*Horário:* " + d.horario + "\n";
+      let unidade = null;
+      lista.forEach((a) => {
+        if ((a.unidade || "") !== unidade) {
+          unidade = a.unidade || "";
+          if (unidade) md += "\n### " + unidade + "\n";
+        }
+        md += "\n**" + dataCurta(a.data) + "**" + (faixaHora(a) ? " · " + faixaHora(a) : "") + " — " + a.assunto + "\n";
+        if (temNota(a)) {
+          a.notas.forEach((n) => {
+            md += "- " + String(n.texto).replace(/\n+/g, " ") + "  <!-- " + carimbo(n.em) + " -->\n";
+          });
+        }
+      });
+      md += "\n";
+    });
+    return md;
+  }
+
+  async function exportar(discId) {
+    const md = markdownDe(discId);
+    const d = discId ? porId(estado.disciplinas, discId) : null;
+    const nomeArquivo = "diario-" + (d ? chave(d.nome).replace(/\s+/g, "-") : "todas-as-disciplinas") + ".md";
+
+    let baixar = null;
+    try { baixar = window.claude && window.claude.use ? await window.claude.use("downloads") : null; }
+    catch (e) { baixar = null; }
+
+    if (baixar) {
+      try {
+        await baixar.save({ filename: nomeArquivo, data: md });
+        avisar("Arquivo salvo — arraste para o seu vault.");
+        return;
+      } catch (e) {
+        if (e && e.code === "declined") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(md);
+      avisar("Markdown copiado — cole em uma nota do Obsidian.");
+    } catch (e) {
+      avisar("Não consegui exportar agora. Tente novamente em instantes.");
+    }
+  }
+
+  /* ============================================================
+     interação
+     ============================================================ */
+
+  function abrirNota(aulaId) {
+    estado.abertos.add(aulaId);
+    agendarDesenho();
+    setTimeout(() => {
+      const campo = document.querySelector('[data-campo-nota="' + aulaId + '"]');
+      if (campo) { campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }
+    }, 20);
+  }
+
+  async function salvarNota(aulaId) {
+    const texto = String(estado.rascunhos[aulaId] || "").trim();
+    if (!texto) { avisar("Escreva algo antes de salvar."); return; }
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) return;
+    const atualizada = Object.assign({}, aula, { notas: (aula.notas || []).concat([{ id: id(), texto: texto, em: Date.now() }]) });
+    delete estado.rascunhos[aulaId];
+    estado.abertos.delete(aulaId);
+    await salvarAula(atualizada);
+    agendarDesenho();
+    avisar("Anotação salva.");
+  }
+
+  async function apagarNota(aulaId, notaId) {
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) return;
+    const atualizada = Object.assign({}, aula, { notas: (aula.notas || []).filter((n) => n.id !== notaId) });
+    await salvarAula(atualizada);
+    agendarDesenho();
+  }
+
+  document.addEventListener("click", (ev) => {
+    const aba = ev.target.closest("[data-aba]");
+    if (aba) { estado.aba = aba.dataset.aba; estado.todasAsAulas = false; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+
+    if (ev.target.closest("#aba-nova") || ev.target.closest("#btn-importar")) { abrirImportador(null); return; }
+    if (ev.target.closest("#btn-exportar")) {
+      if (!estado.disciplinas.length) { avisar("Importe um plano de ensino antes de exportar."); return; }
+      exportar(estado.aba === "painel" ? null : estado.aba);
+      return;
+    }
+    if (ev.target.closest("#fechar-importador") || ev.target.closest("#btn-cancelar")) { fecharImportador(); return; }
+    if (ev.target.closest("#btn-confirmar")) { confirmarImportacao(); return; }
+    if (ev.target.closest("#btn-exemplo")) { $("#entrada").value = exemplo(); $("#campo-nome").value = ""; $("#campo-horario").value = ""; atualizarPrevia(); return; }
+    if (ev.target === $("#capa-importador")) { fecharImportador(); return; }
+
+    const cor = ev.target.closest("[data-cor]");
+    if (cor) { imp.cor = cor.dataset.cor; desenharCores(); return; }
+
+    const alvo = ev.target.closest("[data-acao]");
+    if (!alvo) return;
+    const acao = alvo.dataset.acao;
+
+    if (acao === "importar") abrirImportador(null);
+    else if (acao === "reimportar") abrirImportador(alvo.dataset.disc);
+    else if (acao === "abrir") { estado.aba = alvo.dataset.disc; estado.todasAsAulas = false; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    else if (acao === "abrir-nota") abrirNota(alvo.dataset.aula);
+    else if (acao === "cancelar-nota") { estado.abertos.delete(alvo.dataset.aula); delete estado.rascunhos[alvo.dataset.aula]; agendarDesenho(); }
+    else if (acao === "salvar-nota") salvarNota(alvo.dataset.aula);
+    else if (acao === "apagar-nota") apagarNota(alvo.dataset.aula, alvo.dataset.nota);
+    else if (acao === "exportar-disc") exportar(alvo.dataset.disc);
+    else if (acao === "alternar-crono") { estado.todasAsAulas = !estado.todasAsAulas; }
+    else if (acao === "remover-disc") {
+      const d = porId(estado.disciplinas, alvo.dataset.disc);
+      if (!d) return;
+      const quantas = aulasDe(d.id).length;
+      if (confirm("Remover “" + d.nome + "” e suas " + quantas + " aulas, incluindo as anotações? Essa ação não pode ser desfeita.")) apagarDisciplina(d);
+    }
+  });
+
+  document.addEventListener("input", (ev) => {
+    const campo = ev.target;
+    if (campo.dataset && campo.dataset.campoNota) {
+      estado.rascunhos[campo.dataset.campoNota] = campo.value;
+      ajustarAltura(campo);
+      return;
+    }
+    if (campo.id === "entrada" || campo.id === "campo-ano") atualizarPrevia();
+  });
+
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && !$("#capa-importador").hidden) { fecharImportador(); return; }
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") {
+      const campo = ev.target;
+      if (campo.dataset && campo.dataset.campoNota) { ev.preventDefault(); salvarNota(campo.dataset.campoNota); }
+      else if (!$("#capa-importador").hidden && !$("#btn-confirmar").disabled) { ev.preventDefault(); confirmarImportacao(); }
+    }
+  });
+
+  /* ============================================================
+     início
+     ============================================================ */
+
+  lerLocal();
+  if (estado.disciplinas.length) estado.pronto = true;
+  desenhar();
+  setTimeout(() => { if (!estado.pronto) { estado.pronto = true; agendarDesenho(); } }, 1500);
+  ligarNuvem();
+})();
+</script>
