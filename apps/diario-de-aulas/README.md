@@ -20,6 +20,10 @@ mantidos no vault do Obsidian.
   assunto (ignorando maiúsculas, acentos e espaçamento) em uma só, preservando as anotações de
   todas antes de apagar as repetidas. Roda também sozinho, uma vez, quando o app carrega — cobre
   o caso comum de importar o mesmo plano duas vezes.
+- **Editar o cronograma completo** — ao expandir o cronograma, clique no horário, no assunto ou
+  na unidade de qualquer aula para editar ali mesmo. Se outras aulas caírem no mesmo dia da
+  semana e horário (as aulas semanais de uma turma, por exemplo), o app pergunta se a mudança
+  deve valer para elas também.
 
 ## Formatos de plano de ensino reconhecidos
 

@@ -466,6 +466,46 @@
   tr.atual td:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); padding-left: 8px; }
   tr.atual td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
 
+  .cel-editavel {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    padding: 3px 7px;
+    margin: -3px -7px;
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+  }
+  .cel-editavel:hover { background: var(--accent-soft); }
+  td.vazia .cel-editavel { color: var(--ink-3); }
+  .celula-editor { display: flex; align-items: center; gap: 6px; }
+  .celula-input {
+    flex: 1;
+    min-width: 84px;
+    padding: 4px 8px;
+    font: inherit;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+  }
+  .celula-input:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .celula-acoes { display: flex; gap: 3px; flex: none; }
+  .celula-acoes button {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12.5px;
+    line-height: 1;
+  }
+  .celula-ok { background: var(--good-soft); color: var(--good); }
+  .celula-ok:hover { background: color-mix(in srgb, var(--good) 26%, var(--good-soft)); }
+  .celula-cancelar { color: var(--ink-3); }
+  .celula-cancelar:hover { background: var(--surface-3); color: var(--ink); }
+
   /* ---------- vazio ---------- */
   .vazio {
     text-align: center;
@@ -1036,7 +1076,8 @@
     nuvem: false,
     abertos: new Set(),
     rascunhos: {},
-    todasAsAulas: false
+    todasAsAulas: false,
+    editandoCelula: null
   };
 
   const CHAVE_LOCAL = "diario-de-aulas-v1";
@@ -1402,9 +1443,9 @@
         todas.map((a) => {
           const classe = a.data < HOJE ? "feita" : (corte.proxima && a.id === corte.proxima.id ? "atual" : "");
           return '<tr class="' + classe + '"><td class="data">' + esc(dataCurta(a.data)) + "</td>" +
-            '<td class="data">' + esc(faixaHora(a) || "—") + "</td>" +
-            "<td>" + esc(a.assunto) + "</td>" +
-            "<td>" + esc(a.unidade || "—") + "</td>" +
+            '<td class="data">' + celulaEditavel(a, "horario", faixaHora(a) || "—", faixaHora(a) || "") + "</td>" +
+            "<td>" + celulaEditavel(a, "assunto", a.assunto, a.assunto) + "</td>" +
+            '<td class="' + (a.unidade ? "" : "vazia") + '">' + celulaEditavel(a, "unidade", a.unidade || "—", a.unidade || "") + "</td>" +
             '<td class="num">' + (temNota(a) ? a.notas.length : "—") + "</td></tr>";
         }).join("") +
         "</tbody></table></div></details>";
@@ -1457,6 +1498,94 @@
   function ajustarAltura(area) {
     area.style.height = "auto";
     area.style.height = Math.min(area.scrollHeight + 2, 320) + "px";
+  }
+
+  // uma célula do cronograma completo: texto clicável, ou o editor quando é a célula ativa
+  function celulaEditavel(a, campo, exibicao, valorBruto) {
+    const ed = estado.editandoCelula;
+    if (ed && ed.aula === a.id && ed.campo === campo) {
+      const foco = "cel-" + a.id + "-" + campo;
+      return '<div class="celula-editor">' +
+        '<input type="text" class="celula-input" data-foco="' + foco + '" data-aula="' + esc(a.id) + '" data-campo="' + campo + '" value="' + esc(valorBruto) + '">' +
+        '<div class="celula-acoes">' +
+        '<button class="celula-ok" data-acao="salvar-celula" data-aula="' + esc(a.id) + '" data-campo="' + campo + '" type="button" aria-label="Salvar" title="Salvar">✓</button>' +
+        '<button class="celula-cancelar" data-acao="cancelar-celula" type="button" aria-label="Cancelar edição" title="Cancelar">✕</button>' +
+        "</div></div>";
+    }
+    return '<button class="cel-editavel" data-acao="editar-celula" data-aula="' + esc(a.id) + '" data-campo="' + campo + '" type="button">' + esc(exibicao) + "</button>";
+  }
+
+  function abrirEdicaoCelula(aulaId, campo) {
+    estado.editandoCelula = { aula: aulaId, campo: campo };
+    agendarDesenho();
+    setTimeout(() => {
+      const entrada = document.querySelector('[data-foco="cel-' + aulaId + '-' + campo + '"]');
+      if (entrada) { entrada.focus(); entrada.select(); }
+    }, 20);
+  }
+
+  function fecharEdicaoCelula() {
+    estado.editandoCelula = null;
+    agendarDesenho();
+  }
+
+  const ROTULO_CAMPO = { horario: "o horário", assunto: "o assunto", unidade: "a unidade" };
+
+  // salva o valor de uma célula do cronograma; se outras aulas da disciplina caem no mesmo
+  // dia da semana e horário (antes desta edição), oferece aplicar a mesma mudança a todas
+  async function salvarCampoCronograma(aulaId, campo, valorBruto) {
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) { fecharEdicaoCelula(); return; }
+
+    let patch;
+    if (campo === "horario") {
+      const texto = valorBruto.trim();
+      if (!texto) patch = { inicio: null, fim: null };
+      else {
+        const hr = lerHorario(texto);
+        if (!hr) { avisar("Não entendi esse horário. Use algo como 19:00–20:40."); return; }
+        patch = { inicio: hr.inicio, fim: hr.fim || null };
+      }
+    } else if (campo === "assunto") {
+      const texto = valorBruto.trim();
+      if (!texto) { avisar("O assunto não pode ficar em branco."); return; }
+      patch = { assunto: texto };
+    } else if (campo === "unidade") {
+      patch = { unidade: valorBruto.trim() };
+    } else { fecharEdicaoCelula(); return; }
+
+    const mudou = Object.keys(patch).some((k) => (aula[k] || "") !== (patch[k] || ""));
+    if (!mudou) { fecharEdicaoCelula(); return; }
+
+    // outras aulas da mesma disciplina no mesmo dia da semana e horário — calculado
+    // com os valores ANTERIORES à edição, então aplica-se mesmo quando o campo é o horário
+    const diaSemana = dataDe(aula.data).getDay();
+    const irmas = estado.aulas.filter((x) =>
+      x.id !== aula.id &&
+      x.disciplinaId === aula.disciplinaId &&
+      dataDe(x.data).getDay() === diaSemana &&
+      (x.inicio || "") === (aula.inicio || "") &&
+      (x.fim || "") === (aula.fim || "")
+    );
+
+    fecharEdicaoCelula();
+    await salvarAula(Object.assign({}, aula, patch));
+
+    if (irmas.length) {
+      const p = partes(aula.data);
+      const ok = await perguntar(
+        "Aplicar às demais aulas?",
+        "Encontrei " + irmas.length + (irmas.length > 1 ? " outras aulas" : " outra aula") + " de " + p.dowLongo.replace("-feira", "") +
+          (faixaHora(aula) ? ", " + faixaHora(aula) : " sem horário definido") + ". Também mudar " + ROTULO_CAMPO[campo] + " delas?",
+        "Aplicar a " + (irmas.length + 1) + " aulas"
+      );
+      if (ok) { for (const x of irmas) { await salvarAula(Object.assign({}, x, patch)); } }
+      agendarDesenho();
+      avisar(ok ? "Alterado em " + (irmas.length + 1) + " aulas." : "Alterado só nesta aula.");
+    } else {
+      agendarDesenho();
+      avisar("Aula atualizada.");
+    }
   }
 
   /* ============================================================
@@ -1749,11 +1878,12 @@
 
   let responderConfirmacao = null;
 
-  function perguntar(titulo, texto, rotulo) {
+  function perguntar(titulo, texto, rotulo, perigo) {
     return new Promise((resolve) => {
       $("#confirmar-titulo").textContent = titulo;
       $("#confirmar-texto").textContent = texto;
       $("#btn-sim").textContent = rotulo;
+      $("#btn-sim").classList.toggle("btn-perigo", !!perigo);
       $("#capa-confirmar").hidden = false;
       document.body.style.overflow = "hidden";
       responderConfirmacao = resolve;
@@ -1846,6 +1976,12 @@
     else if (acao === "apagar-nota") apagarNota(alvo.dataset.aula, alvo.dataset.nota);
     else if (acao === "exportar-disc") exportar(alvo.dataset.disc);
     else if (acao === "alternar-crono") { estado.todasAsAulas = !estado.todasAsAulas; }
+    else if (acao === "editar-celula") abrirEdicaoCelula(alvo.dataset.aula, alvo.dataset.campo);
+    else if (acao === "cancelar-celula") fecharEdicaoCelula();
+    else if (acao === "salvar-celula") {
+      const entrada = document.querySelector('[data-foco="cel-' + alvo.dataset.aula + '-' + alvo.dataset.campo + '"]');
+      if (entrada) salvarCampoCronograma(alvo.dataset.aula, alvo.dataset.campo, entrada.value);
+    }
     else if (acao === "verificar-duplicatas") {
       removerDuplicadas(alvo.dataset.disc).then((n) => {
         agendarDesenho();
@@ -1861,7 +1997,8 @@
         "Remover " + d.nome + "?",
         "As " + quantas + " aulas do cronograma" + (comNota ? " e as anotações de " + comNota + (comNota > 1 ? " delas" : " delas") : "") +
           " serão apagadas. Não dá para desfazer.",
-        "Remover disciplina"
+        "Remover disciplina",
+        true
       ).then((ok) => {
         if (!ok) return;
         apagarDisciplina(d);
@@ -1881,6 +2018,11 @@
   });
 
   document.addEventListener("keydown", (ev) => {
+    if (ev.target.classList && ev.target.classList.contains("celula-input")) {
+      if (ev.key === "Enter") { ev.preventDefault(); salvarCampoCronograma(ev.target.dataset.aula, ev.target.dataset.campo, ev.target.value); }
+      else if (ev.key === "Escape") { ev.preventDefault(); fecharEdicaoCelula(); }
+      return;
+    }
     if (ev.key === "Enter" && !$("#capa-editar").hidden && ev.target.tagName === "INPUT" && ev.target.type === "text") {
       ev.preventDefault();
       salvarEdicao();
