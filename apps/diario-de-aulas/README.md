@@ -9,11 +9,11 @@ mantidos no vault do Obsidian.
 - **Painel** — a próxima aula em destaque, a agenda das aulas seguintes agrupada por dia e o
   andamento de cada disciplina (aulas dadas sobre o total e quantas já têm anotação).
 - **Aba da disciplina** — as duas aulas anteriores e a próxima, uma abaixo da outra, cada uma
-  com data, horário, unidade, assunto e comentários. Abaixo, o cronograma completo recolhido.
+  com data, horário, sala, assunto e comentários. Abaixo, o cronograma completo recolhido.
 - **Importar plano de ensino** — cole o markdown da nota e confirme a prévia do que foi lido.
   Reimportar a mesma disciplina atualiza o cronograma preservando os comentários já escritos.
-- **Editar disciplina** — nome, código ou turma, local, horário padrão e cor. O horário pode ser
-  aplicado de uma vez a todas as aulas do cronograma quando o horário da turma muda.
+- **Editar disciplina** — nome, curso, código ou turma, sala, horário padrão e cor. O horário pode
+  ser aplicado de uma vez a todas as aulas do cronograma quando o horário da turma muda.
 - **Exportar** — gera o diário em markdown (aula seguida das anotações) para salvar como `.md`
   ou copiar de volta para o vault.
 
@@ -24,6 +24,9 @@ O leitor aceita tabelas e listas na mesma nota:
 ```markdown
 ---
 disciplina: Cálculo Diferencial e Integral II
+curso: Engenharia Civil
+turma: MAT-1042 T2
+sala: 305, Bloco B
 horario: 19:00–20:40
 ---
 
@@ -46,7 +49,10 @@ horario: 19:00–20:40
 - **Horários**: `19:00`, `19h`, `19h00`, `19:00–20:40`, `19h às 20h40`. Aulas sem horário recebem
   o horário padrão da disciplina.
 - **Unidades**: qualquer título de nível `##` ou mais profundo passa a valer para as aulas seguintes;
-  uma coluna `Unidade`, `Módulo` ou `Semana` na tabela tem prioridade.
+  uma coluna `Unidade`, `Módulo` ou `Semana` na tabela tem prioridade. A unidade aparece no
+  cronograma completo e no markdown exportado — nos cards das aulas o espaço é da sala.
+- **Frontmatter**: `disciplina`/`nome`, `curso`, `turma`/`codigo`, `sala`/`local` e `horario`
+  preenchem os atributos da disciplina na importação, e podem ser ajustados depois no editor.
 - **Colunas**: reconhecidas pelo nome (`Data`, `Horário`, `Assunto`/`Conteúdo`/`Tema`, `Unidade`).
   Sem cabeçalho reconhecível, a primeira coluna é a data e a segunda o assunto.
 - Links internos do Obsidian (`[[nota|texto]]`) e marcações de negrito são limpos do assunto.

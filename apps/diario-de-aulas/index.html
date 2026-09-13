@@ -387,7 +387,7 @@
   .pill-passada { background: var(--surface-3); color: var(--ink-3); }
   .pill-nota { background: var(--good-soft); color: var(--good); }
   .aula-meta .hora { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-  .aula-meta .unidade { font-size: 12.5px; color: var(--ink-3); }
+  .aula-meta .sala { font-size: 12.5px; color: var(--ink-3); }
 
   .aula h3 {
     font-family: var(--serif);
@@ -696,13 +696,17 @@
         <label for="editar-nome">Nome</label>
         <input type="text" id="editar-nome" placeholder="Nome da disciplina">
       </div>
+      <div class="campo" style="grid-column: 1 / -1">
+        <label for="editar-curso">Curso</label>
+        <input type="text" id="editar-curso" placeholder="Engenharia Civil">
+      </div>
       <div class="campo">
         <label for="editar-codigo">Código ou turma</label>
         <input type="text" id="editar-codigo" placeholder="MAT-1042 · T2">
       </div>
       <div class="campo">
-        <label for="editar-local">Local</label>
-        <input type="text" id="editar-local" placeholder="Sala 305, Bloco B">
+        <label for="editar-sala">Sala</label>
+        <input type="text" id="editar-sala" placeholder="305, Bloco B">
       </div>
       <div class="campo">
         <label for="editar-horario">Horário padrão</label>
@@ -878,7 +882,7 @@
 
   // Lê o texto colado e devolve {nome, horario, aulas:[], ignoradas:n}
   function lerPlano(texto, anoPadrao) {
-    const saida = { nome: "", horario: "", aulas: [], ignoradas: 0 };
+    const saida = { nome: "", horario: "", curso: "", codigo: "", sala: "", aulas: [], ignoradas: 0 };
     if (!texto || !texto.trim()) return saida;
 
     let corpo = texto.replace(/\r\n?/g, "\n");
@@ -894,6 +898,9 @@
         const v = p[2].replace(/^["']|["']$/g, "").trim();
         if (!saida.nome && ["disciplina", "nome", "title", "titulo", "materia", "componente"].includes(k)) saida.nome = v;
         if (!saida.horario && ["horario", "hora", "aula", "encontro"].includes(k)) saida.horario = v;
+        if (!saida.curso && ["curso", "graduacao", "programa"].includes(k)) saida.curso = v;
+        if (!saida.codigo && ["codigo", "turma", "sigla", "cod"].includes(k)) saida.codigo = v;
+        if (!saida.sala && ["sala", "local", "sala de aula", "espaco"].includes(k)) saida.sala = v;
       });
     }
 
@@ -1207,6 +1214,14 @@
     periodo.textContent = p.dowLongo + ", " + (+p.dia) + " " + p.mes;
   }
 
+  // "305" vira "Sala 305"; "Lab 2" e "Anfiteatro" ficam como estão
+  function rotuloSala(valor) {
+    const texto = String(valor || "").trim();
+    if (!texto) return "";
+    return /^(sala|sl\.?|lab|anfi|audit|bloco|pr[ée]dio|campus|on-?line|remoto|ead)/i.test(texto) ? texto : "Sala " + texto;
+  }
+  function salaDe(d) { return rotuloSala(d ? (d.sala || d.local) : ""); }
+
   function nomeCurto(nome) {
     const limpo = String(nome || "Disciplina").trim();
     return limpo.length > 28 ? limpo.slice(0, 27).trimEnd() + "…" : limpo;
@@ -1241,7 +1256,7 @@
         '<p class="detalhe">' +
         (d ? '<i class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + esc(d.cor) + ';margin-right:6px"></i>' + esc(d.nome) + " · " : "") +
         esc(dataExtenso(destaque.data)) + (faixaHora(destaque) ? " · " + esc(faixaHora(destaque)) : "") +
-        (destaque.unidade ? " · " + esc(destaque.unidade) : "") +
+        (salaDe(d) ? " · " + esc(salaDe(d)) : "") +
         "</p></div>" +
         '<div class="lado"><button class="btn" data-acao="abrir" data-disc="' + esc(destaque.disciplinaId) + '" type="button">Abrir disciplina</button></div>' +
         "</section>";
@@ -1287,7 +1302,7 @@
           return '<button class="linha" data-acao="abrir" data-disc="' + esc(a.disciplinaId) + '" type="button">' +
             '<span class="hora num">' + esc(a.inicio || "—") + "</span>" +
             '<span class="conteudo"><span class="assunto">' + esc(a.assunto) + "</span>" +
-            '<span class="disc"><i class="dot" style="background:' + esc(d ? d.cor : "#888") + '"></i>' + esc(d ? d.nome : "Disciplina") + (a.unidade ? " · " + esc(a.unidade) : "") + "</span></span>" +
+            '<span class="disc"><i class="dot" style="background:' + esc(d ? d.cor : "#888") + '"></i>' + esc(d ? d.nome : "Disciplina") + (salaDe(d) ? " · " + esc(salaDe(d)) : "") + "</span></span>" +
             '<span class="seta">›</span></button>';
         }).join("") +
         "</div>";
@@ -1299,10 +1314,11 @@
     const corte = recorte(d.id);
     const todas = aulasDe(d.id);
     const cartoes = [];
-    corte.anteriores.forEach((a) => cartoes.push(htmlAula(a, "passada")));
-    if (corte.proxima) cartoes.push(htmlAula(corte.proxima, corte.proxima.data === HOJE ? "hoje" : "proxima"));
+    const sala = salaDe(d);
+    corte.anteriores.forEach((a) => cartoes.push(htmlAula(a, "passada", sala)));
+    if (corte.proxima) cartoes.push(htmlAula(corte.proxima, corte.proxima.data === HOJE ? "hoje" : "proxima", sala));
 
-    const etiqueta = [d.codigo, d.horario, d.local].filter(Boolean).join(" · ") || "Disciplina";
+    const etiqueta = [d.curso, d.codigo, d.horario].filter(Boolean).join(" · ") || "Disciplina";
     let html = htmlAvisoArmazenamento() +
       '<div class="page-head"><span class="eyebrow" style="color:' + esc(d.cor) + '">' +
       esc(etiqueta) + "</span><h1>" + esc(d.nome) + "</h1>" +
@@ -1341,7 +1357,7 @@
     return html;
   }
 
-  function htmlAula(a, estadoAula) {
+  function htmlAula(a, estadoAula, sala) {
     const p = partes(a.data);
     const rotulo = estadoAula === "hoje" ? '<span class="pill pill-hoje">Aula de hoje</span>'
       : estadoAula === "proxima" ? '<span class="pill pill-proxima">Próxima aula</span>'
@@ -1354,7 +1370,7 @@
       "<div>" +
       '<div class="aula-meta">' + rotulo +
       (faixaHora(a) ? '<span class="hora">' + esc(faixaHora(a)) + "</span>" : "") +
-      (a.unidade ? '<span class="unidade">' + esc(a.unidade) + "</span>" : "") +
+      (sala ? '<span class="sala">' + esc(sala) + "</span>" : "") +
       (temNota(a) ? '<span class="pill pill-nota">' + a.notas.length + (a.notas.length > 1 ? " anotações" : " anotação") + "</span>" : "") +
       "</div>" +
       "<h3>" + esc(a.assunto) + "</h3>" +
@@ -1470,6 +1486,9 @@
     }
     const novaDisc = !disciplina;
     disciplina = Object.assign({}, disciplina || { id: id(), criadoEm: Date.now() }, { nome: nome, horario: horario, cor: imp.cor });
+    if (!disciplina.curso && plano.curso) disciplina.curso = plano.curso;
+    if (!disciplina.codigo && plano.codigo) disciplina.codigo = plano.codigo;
+    if (!disciplina.sala && plano.sala) disciplina.sala = plano.sala;
 
     const anteriores = novaDisc ? [] : aulasDe(disciplina.id);
     const porData = {};
@@ -1550,9 +1569,10 @@
       const lista = aulasDe(d.id);
       md += "\n## " + d.nome + "\n";
       const ficha = [];
+      if (d.curso) ficha.push("*Curso:* " + d.curso);
       if (d.codigo) ficha.push("*Turma:* " + d.codigo);
       if (d.horario) ficha.push("*Horário:* " + d.horario);
-      if (d.local) ficha.push("*Local:* " + d.local);
+      if (salaDe(d)) ficha.push("*Sala:* " + salaDe(d));
       if (ficha.length) md += "\n" + ficha.join(" · ") + "\n";
       let unidade = null;
       lista.forEach((a) => {
@@ -1610,8 +1630,9 @@
     editor.id = d.id;
     editor.cor = d.cor || CORES[0];
     $("#editar-nome").value = d.nome || "";
+    $("#editar-curso").value = d.curso || "";
     $("#editar-codigo").value = d.codigo || "";
-    $("#editar-local").value = d.local || "";
+    $("#editar-sala").value = d.sala || d.local || "";
     $("#editar-horario").value = d.horario || "";
     $("#editar-aplicar").checked = false;
     $("#editar-quantas").textContent = aulasDe(d.id).length;
@@ -1641,8 +1662,9 @@
 
     await salvarDisciplina(Object.assign({}, d, {
       nome: nome,
+      curso: $("#editar-curso").value.trim(),
       codigo: $("#editar-codigo").value.trim(),
-      local: $("#editar-local").value.trim(),
+      sala: $("#editar-sala").value.trim(),
       horario: horario,
       cor: editor.cor
     }));
