@@ -547,6 +547,10 @@
   .previa-lista td, .previa-lista th { padding-right: 10px; }
   .aviso { font-size: 12.5px; color: var(--warm); margin-top: 8px; }
   .folha-acoes { display: flex; gap: 10px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+  .folha-estreita { width: min(430px, 100%); }
+  .folha-estreita p { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
+  .btn-perigo { background: #C2453B; border-color: transparent; color: #fff; }
+  .btn-perigo:hover { background: #A93A31; }
   .folha-acoes .direita { margin-left: auto; display: flex; gap: 10px; }
 
   /* ---------- aviso flutuante ---------- */
@@ -655,6 +659,19 @@
       <div class="direita">
         <button class="btn" id="btn-cancelar" type="button">Cancelar</button>
         <button class="btn btn-primary" id="btn-confirmar" type="button" disabled>Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="capa" id="capa-confirmar" hidden>
+  <div class="folha folha-estreita" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-texto">
+    <h2 id="confirmar-titulo" style="font-family:var(--serif);font-size:21px;font-weight:400;letter-spacing:-.02em;text-transform:none;color:var(--ink);margin:0"></h2>
+    <p id="confirmar-texto"></p>
+    <div class="folha-acoes">
+      <div class="direita">
+        <button class="btn" id="btn-nao" type="button">Cancelar</button>
+        <button class="btn btn-perigo" id="btn-sim" type="button">Remover</button>
       </div>
     </div>
   </div>
@@ -1514,6 +1531,29 @@
      interação
      ============================================================ */
 
+  let responderConfirmacao = null;
+
+  function perguntar(titulo, texto, rotulo) {
+    return new Promise((resolve) => {
+      $("#confirmar-titulo").textContent = titulo;
+      $("#confirmar-texto").textContent = texto;
+      $("#btn-sim").textContent = rotulo;
+      $("#capa-confirmar").hidden = false;
+      document.body.style.overflow = "hidden";
+      responderConfirmacao = resolve;
+      setTimeout(() => $("#btn-nao").focus(), 30);
+    });
+  }
+
+  function responder(valor) {
+    if (!responderConfirmacao) return;
+    const resolve = responderConfirmacao;
+    responderConfirmacao = null;
+    $("#capa-confirmar").hidden = true;
+    document.body.style.overflow = "";
+    resolve(valor);
+  }
+
   function abrirNota(aulaId) {
     estado.abertos.add(aulaId);
     agendarDesenho();
@@ -1545,6 +1585,12 @@
   }
 
   document.addEventListener("click", (ev) => {
+    if (!$("#capa-confirmar").hidden) {
+      if (ev.target.closest("#btn-sim")) responder(true);
+      else if (ev.target.closest("#btn-nao") || ev.target === $("#capa-confirmar")) responder(false);
+      return;
+    }
+
     const aba = ev.target.closest("[data-aba]");
     if (aba) { estado.aba = aba.dataset.aba; estado.todasAsAulas = false; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
 
@@ -1579,7 +1625,17 @@
       const d = porId(estado.disciplinas, alvo.dataset.disc);
       if (!d) return;
       const quantas = aulasDe(d.id).length;
-      if (confirm("Remover “" + d.nome + "” e suas " + quantas + " aulas, incluindo as anotações? Essa ação não pode ser desfeita.")) apagarDisciplina(d);
+      const comNota = aulasDe(d.id).filter(temNota).length;
+      perguntar(
+        "Remover " + d.nome + "?",
+        "As " + quantas + " aulas do cronograma" + (comNota ? " e as anotações de " + comNota + (comNota > 1 ? " delas" : " delas") : "") +
+          " serão apagadas. Não dá para desfazer.",
+        "Remover disciplina"
+      ).then((ok) => {
+        if (!ok) return;
+        apagarDisciplina(d);
+        avisar("“" + d.nome + "” foi removida.");
+      });
     }
   });
 
@@ -1594,6 +1650,7 @@
   });
 
   document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && !$("#capa-confirmar").hidden) { responder(false); return; }
     if (ev.key === "Escape" && !$("#capa-importador").hidden) { fecharImportador(); return; }
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") {
       const campo = ev.target;
