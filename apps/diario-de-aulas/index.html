@@ -548,6 +548,23 @@
   .aviso { font-size: 12.5px; color: var(--warm); margin-top: 8px; }
   .folha-acoes { display: flex; gap: 10px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
   .folha-estreita { width: min(430px, 100%); }
+  .folha-media { width: min(540px, 100%); }
+  .caixa-opcao {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    margin-top: 14px;
+    padding: 11px 13px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+  .caixa-opcao input { margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+  .caixa-opcao span { color: var(--ink-2); }
+  .caixa-opcao strong { display: block; color: var(--ink); font-weight: 500; }
+  .head-acoes { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
   .folha-estreita p { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
   .btn-perigo { background: #C2453B; border-color: transparent; color: #fff; }
   .btn-perigo:hover { background: #A93A31; }
@@ -659,6 +676,53 @@
       <div class="direita">
         <button class="btn" id="btn-cancelar" type="button">Cancelar</button>
         <button class="btn btn-primary" id="btn-confirmar" type="button" disabled>Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="capa" id="capa-editar" hidden>
+  <div class="folha folha-media" role="dialog" aria-modal="true" aria-labelledby="titulo-editar">
+    <div class="folha-topo">
+      <div>
+        <h2 id="titulo-editar">Editar disciplina</h2>
+        <p>Estes dados aparecem nas abas, no painel e no markdown exportado para o Obsidian.</p>
+      </div>
+      <button class="fechar" id="fechar-editar" type="button" aria-label="Fechar">✕</button>
+    </div>
+
+    <div class="campos">
+      <div class="campo" style="grid-column: 1 / -1">
+        <label for="editar-nome">Nome</label>
+        <input type="text" id="editar-nome" placeholder="Nome da disciplina">
+      </div>
+      <div class="campo">
+        <label for="editar-codigo">Código ou turma</label>
+        <input type="text" id="editar-codigo" placeholder="MAT-1042 · T2">
+      </div>
+      <div class="campo">
+        <label for="editar-local">Local</label>
+        <input type="text" id="editar-local" placeholder="Sala 305, Bloco B">
+      </div>
+      <div class="campo">
+        <label for="editar-horario">Horário padrão</label>
+        <input type="text" id="editar-horario" placeholder="19:00–20:40">
+      </div>
+      <div class="campo">
+        <label>Cor</label>
+        <div class="cores" id="cores-editar"></div>
+      </div>
+    </div>
+
+    <label class="caixa-opcao" for="editar-aplicar">
+      <input type="checkbox" id="editar-aplicar">
+      <span><strong>Aplicar o horário a todas as aulas</strong>Reescreve o horário das <span id="editar-quantas">0</span> aulas do cronograma. Use quando o horário da turma mudar.</span>
+    </label>
+
+    <div class="folha-acoes">
+      <div class="direita">
+        <button class="btn" id="btn-editar-cancelar" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="btn-editar-salvar" type="button">Salvar</button>
       </div>
     </div>
   </div>
@@ -1238,13 +1302,17 @@
     corte.anteriores.forEach((a) => cartoes.push(htmlAula(a, "passada")));
     if (corte.proxima) cartoes.push(htmlAula(corte.proxima, corte.proxima.data === HOJE ? "hoje" : "proxima"));
 
+    const etiqueta = [d.codigo, d.horario, d.local].filter(Boolean).join(" · ") || "Disciplina";
     let html = htmlAvisoArmazenamento() +
       '<div class="page-head"><span class="eyebrow" style="color:' + esc(d.cor) + '">' +
-      esc(d.horario ? d.horario : "Disciplina") + "</span><h1>" + esc(d.nome) + "</h1>" +
+      esc(etiqueta) + "</span><h1>" + esc(d.nome) + "</h1>" +
       "<p>" + (corte.proxima
         ? "A próxima aula é " + esc(distancia(corte.proxima.data)) + ". Abaixo dela, as duas anteriores — registre o que aconteceu enquanto está fresco."
         : "Todas as aulas do cronograma já aconteceram. Estas são as últimas.") +
-      "</p></div>";
+      '</p><div class="head-acoes">' +
+      '<button class="btn btn-sm" data-acao="editar-disc" data-disc="' + esc(d.id) + '" type="button">Editar disciplina</button>' +
+      '<button class="btn btn-sm" data-acao="reimportar" data-disc="' + esc(d.id) + '" type="button">Atualizar cronograma</button>' +
+      "</div></div>";
 
     html += cartoes.length
       ? '<div class="aulas">' + cartoes.join("") + "</div>"
@@ -1267,7 +1335,6 @@
 
     html += '<div class="folha-acoes" style="margin-top:26px">' +
       '<button class="btn btn-sm" data-acao="exportar-disc" data-disc="' + esc(d.id) + '" type="button">Exportar esta disciplina</button>' +
-      '<button class="btn btn-sm" data-acao="reimportar" data-disc="' + esc(d.id) + '" type="button">Atualizar cronograma</button>' +
       '<div class="direita"><button class="btn btn-sm btn-quiet" data-acao="remover-disc" data-disc="' + esc(d.id) + '" type="button">Remover disciplina</button></div>' +
       "</div>";
 
@@ -1330,7 +1397,7 @@
     $("#campo-nome").value = d ? d.nome : "";
     $("#campo-horario").value = d ? (d.horario || "") : "";
     $("#campo-ano").value = new Date().getFullYear();
-    desenharCores();
+    desenharCores("#cores", imp.cor, "data-cor");
     $("#capa-importador").hidden = false;
     document.body.style.overflow = "hidden";
     atualizarPrevia();
@@ -1344,9 +1411,9 @@
     imp.alvo = null;
   }
 
-  function desenharCores() {
-    $("#cores").innerHTML = CORES.map((c) =>
-      '<button class="cor-op" type="button" data-cor="' + c + '" aria-pressed="' + (c === imp.cor) + '" aria-label="Cor ' + c + '" style="background:' + c + '"></button>'
+  function desenharCores(seletor, selecionada, atributo) {
+    $(seletor).innerHTML = CORES.map((c) =>
+      '<button class="cor-op" type="button" ' + atributo + '="' + c + '" aria-pressed="' + (c === selecionada) + '" aria-label="Cor ' + c + '" style="background:' + c + '"></button>'
     ).join("");
   }
 
@@ -1482,7 +1549,11 @@
     alvos.forEach((d) => {
       const lista = aulasDe(d.id);
       md += "\n## " + d.nome + "\n";
-      if (d.horario) md += "\n*Horário:* " + d.horario + "\n";
+      const ficha = [];
+      if (d.codigo) ficha.push("*Turma:* " + d.codigo);
+      if (d.horario) ficha.push("*Horário:* " + d.horario);
+      if (d.local) ficha.push("*Local:* " + d.local);
+      if (ficha.length) md += "\n" + ficha.join(" · ") + "\n";
       let unidade = null;
       lista.forEach((a) => {
         if ((a.unidade || "") !== unidade) {
@@ -1530,6 +1601,66 @@
   /* ============================================================
      interação
      ============================================================ */
+
+  const editor = { id: null, cor: CORES[0] };
+
+  function abrirEditor(discId) {
+    const d = porId(estado.disciplinas, discId);
+    if (!d) return;
+    editor.id = d.id;
+    editor.cor = d.cor || CORES[0];
+    $("#editar-nome").value = d.nome || "";
+    $("#editar-codigo").value = d.codigo || "";
+    $("#editar-local").value = d.local || "";
+    $("#editar-horario").value = d.horario || "";
+    $("#editar-aplicar").checked = false;
+    $("#editar-quantas").textContent = aulasDe(d.id).length;
+    desenharCores("#cores-editar", editor.cor, "data-cor-editar");
+    $("#capa-editar").hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(() => $("#editar-nome").focus(), 30);
+  }
+
+  function fecharEditor() {
+    $("#capa-editar").hidden = true;
+    document.body.style.overflow = "";
+    editor.id = null;
+  }
+
+  async function salvarEdicao() {
+    const d = porId(estado.disciplinas, editor.id);
+    if (!d) { fecharEditor(); return; }
+
+    const nome = $("#editar-nome").value.trim();
+    if (!nome) { avisar("A disciplina precisa de um nome."); $("#editar-nome").focus(); return; }
+
+    const horario = $("#editar-horario").value.trim();
+    const aplicar = $("#editar-aplicar").checked;
+    const faixa = aplicar && horario ? lerHorario(horario) : null;
+    if (aplicar && horario && !faixa) { avisar("Não entendi esse horário. Use algo como 19:00–20:40."); $("#editar-horario").focus(); return; }
+
+    await salvarDisciplina(Object.assign({}, d, {
+      nome: nome,
+      codigo: $("#editar-codigo").value.trim(),
+      local: $("#editar-local").value.trim(),
+      horario: horario,
+      cor: editor.cor
+    }));
+
+    let alteradas = 0;
+    if (faixa) {
+      const lista = aulasDe(d.id);
+      for (const a of lista) {
+        if (a.inicio === faixa.inicio && a.fim === faixa.fim) continue;
+        await salvarAula(Object.assign({}, a, { inicio: faixa.inicio, fim: faixa.fim }));
+        alteradas++;
+      }
+    }
+
+    fecharEditor();
+    agendarDesenho();
+    avisar("Disciplina atualizada." + (alteradas ? " Horário aplicado a " + alteradas + (alteradas > 1 ? " aulas." : " aula.") : ""));
+  }
 
   let responderConfirmacao = null;
 
@@ -1585,6 +1716,14 @@
   }
 
   document.addEventListener("click", (ev) => {
+    if (!$("#capa-editar").hidden) {
+      const corEditar = ev.target.closest("[data-cor-editar]");
+      if (corEditar) { editor.cor = corEditar.dataset.corEditar; desenharCores("#cores-editar", editor.cor, "data-cor-editar"); return; }
+      if (ev.target.closest("#btn-editar-salvar")) { salvarEdicao(); return; }
+      if (ev.target.closest("#fechar-editar") || ev.target.closest("#btn-editar-cancelar") || ev.target === $("#capa-editar")) fecharEditor();
+      return;
+    }
+
     if (!$("#capa-confirmar").hidden) {
       if (ev.target.closest("#btn-sim")) responder(true);
       else if (ev.target.closest("#btn-nao") || ev.target === $("#capa-confirmar")) responder(false);
@@ -1606,13 +1745,14 @@
     if (ev.target === $("#capa-importador")) { fecharImportador(); return; }
 
     const cor = ev.target.closest("[data-cor]");
-    if (cor) { imp.cor = cor.dataset.cor; desenharCores(); return; }
+    if (cor) { imp.cor = cor.dataset.cor; desenharCores("#cores", imp.cor, "data-cor"); return; }
 
     const alvo = ev.target.closest("[data-acao]");
     if (!alvo) return;
     const acao = alvo.dataset.acao;
 
     if (acao === "importar") abrirImportador(null);
+    else if (acao === "editar-disc") abrirEditor(alvo.dataset.disc);
     else if (acao === "reimportar") abrirImportador(alvo.dataset.disc);
     else if (acao === "abrir") { estado.aba = alvo.dataset.disc; estado.todasAsAulas = false; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); }
     else if (acao === "abrir-nota") abrirNota(alvo.dataset.aula);
@@ -1650,11 +1790,18 @@
   });
 
   document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && !$("#capa-editar").hidden && ev.target.tagName === "INPUT" && ev.target.type === "text") {
+      ev.preventDefault();
+      salvarEdicao();
+      return;
+    }
+    if (ev.key === "Escape" && !$("#capa-editar").hidden) { fecharEditor(); return; }
     if (ev.key === "Escape" && !$("#capa-confirmar").hidden) { responder(false); return; }
     if (ev.key === "Escape" && !$("#capa-importador").hidden) { fecharImportador(); return; }
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") {
       const campo = ev.target;
       if (campo.dataset && campo.dataset.campoNota) { ev.preventDefault(); salvarNota(campo.dataset.campoNota); }
+      else if (!$("#capa-editar").hidden) { ev.preventDefault(); salvarEdicao(); }
       else if (!$("#capa-importador").hidden && !$("#btn-confirmar").disabled) { ev.preventDefault(); confirmarImportacao(); }
     }
   });

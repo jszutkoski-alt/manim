@@ -12,6 +12,8 @@ mantidos no vault do Obsidian.
   com data, horário, unidade, assunto e comentários. Abaixo, o cronograma completo recolhido.
 - **Importar plano de ensino** — cole o markdown da nota e confirme a prévia do que foi lido.
   Reimportar a mesma disciplina atualiza o cronograma preservando os comentários já escritos.
+- **Editar disciplina** — nome, código ou turma, local, horário padrão e cor. O horário pode ser
+  aplicado de uma vez a todas as aulas do cronograma quando o horário da turma muda.
 - **Exportar** — gera o diário em markdown (aula seguida das anotações) para salvar como `.md`
   ou copiar de volta para o vault.
 
