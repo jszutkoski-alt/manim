@@ -24,6 +24,12 @@ mantidos no vault do Obsidian.
   na unidade de qualquer aula para editar ali mesmo. Se outras aulas caírem no mesmo dia da
   semana e horário (as aulas semanais de uma turma, por exemplo), o app pergunta se a mudança
   deve valer para elas também.
+- **Etiquetas por aula** — marque uma aula com "Prova", "Revisão" ou qualquer etiqueta livre.
+  Aparecem no card, no cronograma completo e no markdown exportado.
+- **Conteúdo não concluído** — sinalize numa aula que sobrou matéria pra próxima vez. Vira um
+  selo visível no card e no cronograma, e entra no markdown exportado.
+- **Arquivar disciplina** — tira uma disciplina encerrada das abas e do painel sem apagar nada.
+  Fica reunida numa aba "Arquivadas", com um botão para reativar quando precisar.
 
 ## Formatos de plano de ensino reconhecidos
 

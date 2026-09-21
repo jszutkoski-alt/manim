@@ -172,6 +172,8 @@
     flex: none;
   }
   .tab-add { font-size: 16px; line-height: 1; padding: 6px 12px; color: var(--ink-3); }
+  .tab-arquivadas { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .tab-arquivadas[aria-selected="true"] { color: var(--ink); }
   .tab-add:hover { color: var(--accent); }
 
   /* ---------- botões ---------- */
@@ -506,6 +508,64 @@
   .celula-cancelar { color: var(--ink-3); }
   .celula-cancelar:hover { background: var(--surface-3); color: var(--ink); }
 
+  /* ---------- etiquetas e conteúdo pendente ---------- */
+  .pill-alerta { background: var(--warm-soft); color: var(--warm); }
+  .acao-discreta {
+    font-size: 12px;
+    color: var(--ink-3);
+    padding: 2.5px 6px;
+    border-radius: 6px;
+  }
+  .acao-discreta:hover { color: var(--ink); background: var(--surface-3); }
+
+  .etiquetas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+  .etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px 3px 10px;
+    border-radius: 999px;
+    background: var(--surface-3);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+  .etiqueta button { color: var(--ink-3); font-size: 10.5px; line-height: 1; padding: 1px; }
+  .etiqueta button:hover { color: #C2453B; }
+  .etiqueta-add {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px dashed var(--line-strong);
+  }
+  .etiqueta-add:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  .etiqueta-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .etiqueta-input {
+    width: 140px;
+    padding: 5px 10px;
+    font: inherit;
+    font-size: 12.5px;
+    background: var(--surface-2);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+  }
+  .etiqueta-input:focus { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .etiqueta-sugestao {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+  }
+  .etiqueta-sugestao:hover { background: var(--accent-soft); color: var(--accent-ink); border-color: transparent; }
+
+  .linha-indicadores { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .badge-mini { font-size: 10.5px; padding: 1.5px 7px; border-radius: 999px; background: var(--surface-3); color: var(--ink-3); }
+  .badge-alerta { background: var(--warm-soft); color: var(--warm); }
+
   /* ---------- vazio ---------- */
   .vazio {
     text-align: center;
@@ -516,6 +576,23 @@
   }
   .vazio h3 { font-family: var(--serif); font-size: 22px; font-weight: 400; margin: 0 0 8px; }
   .vazio p { color: var(--ink-2); margin: 0 auto 18px; max-width: 44ch; }
+
+  .arquivada-linha {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 13px 15px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    background: var(--surface);
+  }
+  .arquivada-linha + .arquivada-linha { margin-top: 8px; }
+  .arquivada-info { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; }
+  .arquivada-info .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .arquivada-info strong { font-size: 14.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arquivada-info span { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+  .arquivada-acoes { display: flex; gap: 8px; flex: none; }
 
   /* ---------- importador ---------- */
   .capa {
@@ -608,7 +685,7 @@
   .folha-estreita p { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
   .btn-perigo { background: #C2453B; border-color: transparent; color: #fff; }
   .btn-perigo:hover { background: #A93A31; }
-  .folha-acoes .direita { margin-left: auto; display: flex; gap: 10px; }
+  .folha-acoes .direita { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 
   /* ---------- aviso flutuante ---------- */
   #toast {
@@ -1075,6 +1152,7 @@
     pronto: false,
     nuvem: false,
     abertos: new Set(),
+    etiquetasAbertas: new Set(),
     rascunhos: {},
     todasAsAulas: false,
     editandoCelula: null
@@ -1204,8 +1282,9 @@
     return { anteriores: lista.slice(Math.max(0, proxIdx - 2), proxIdx), proxima: lista[proxIdx] };
   }
   function proximas(limite) {
+    const idsAtivas = new Set(disciplinasAtivas().map((d) => d.id));
     return estado.aulas
-      .filter((a) => a.data >= HOJE)
+      .filter((a) => a.data >= HOJE && idsAtivas.has(a.disciplinaId))
       .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : (a.inicio || "99") < (b.inicio || "99") ? -1 : 1))
       .slice(0, limite);
   }
@@ -1276,11 +1355,13 @@
     const foco = ativo && ativo.dataset ? ativo.dataset.foco : null;
     const selecao = ativo && ativo.selectionStart;
 
-    if (estado.aba !== "painel" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
+    if (estado.aba !== "painel" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
 
     desenharAbas();
     const alvo = $("#conteudo");
-    alvo.innerHTML = estado.aba === "painel" ? htmlPainel() : htmlDisciplina(porId(estado.disciplinas, estado.aba));
+    alvo.innerHTML = estado.aba === "painel" ? htmlPainel()
+      : estado.aba === "arquivadas" ? htmlArquivadas()
+      : htmlDisciplina(porId(estado.disciplinas, estado.aba));
 
     if (foco) {
       const recuperado = alvo.querySelector('[data-foco="' + foco + '"]');
@@ -1294,13 +1375,15 @@
     alvo.querySelectorAll("textarea.auto").forEach(ajustarAltura);
   }
 
+  function disciplinasAtivas() { return estado.disciplinas.filter((d) => !d.arquivada); }
+  function disciplinasArquivadas() { return estado.disciplinas.filter((d) => d.arquivada); }
+
   function desenharAbas() {
     const abas = $("#abas");
     const itens = [
       '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>'
     ];
-    estado.disciplinas
-      .slice()
+    disciplinasAtivas()
       .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))
       .forEach((d) => {
         itens.push(
@@ -1308,6 +1391,12 @@
           '<i class="dot" style="background:' + esc(d.cor || "#888") + '"></i>' + esc(nomeCurto(d.nome)) + "</button>"
         );
       });
+    const arquivadas = disciplinasArquivadas();
+    if (arquivadas.length) {
+      itens.push(
+        '<button class="tab tab-arquivadas" role="tab" data-aba="arquivadas" aria-selected="' + (estado.aba === "arquivadas") + '" type="button">Arquivadas · ' + arquivadas.length + "</button>"
+      );
+    }
     itens.push('<button class="tab tab-add" id="aba-nova" type="button" title="Importar plano de ensino" aria-label="Importar plano de ensino">＋</button>');
     abas.innerHTML = itens.join("");
 
@@ -1344,6 +1433,15 @@
         '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
     }
 
+    const ativas = disciplinasAtivas();
+    if (!ativas.length) {
+      return htmlAvisoArmazenamento() +
+        '<div class="page-head"><span class="eyebrow">Painel</span><h1>Tudo arquivado por aqui</h1>' +
+        "<p>Suas " + estado.disciplinas.length + (estado.disciplinas.length > 1 ? " disciplinas estão arquivadas." : " disciplina está arquivada.") + " Os dados continuam guardados — é só reativar quando precisar.</p></div>" +
+        '<div class="vazio"><h3>Nenhuma disciplina ativa</h3><p>Reative uma disciplina arquivada ou importe um novo plano de ensino.</p>' +
+        '<button class="btn btn-primary" data-acao="abrir-arquivadas" type="button">Ver arquivadas</button></div>';
+    }
+
     const lista = proximas(12);
     const destaque = lista[0];
     let html = htmlAvisoArmazenamento() +
@@ -1373,7 +1471,7 @@
     }
 
     html += '<section style="margin-top:34px"><h2>Andamento do semestre</h2><div class="progresso">' +
-      estado.disciplinas.slice().sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0)).map((d) => {
+      ativas.slice().sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0)).map((d) => {
         const todas = aulasDe(d.id);
         const dadas = todas.filter((a) => a.data < HOJE).length;
         const comNota = todas.filter(temNota).length;
@@ -1383,7 +1481,34 @@
           '<span class="barra"><i style="width:' + pct + "%;background:" + esc(d.cor) + '"></i></span>' +
           '<span class="prog-num num">' + dadas + "/" + todas.length + (comNota ? " · " + comNota + " ✎" : "") + "</span>" +
           "</button>";
-      }).join("") + "</div></section>";
+      }).join("") + "</div>" +
+      (disciplinasArquivadas().length
+        ? '<p style="margin-top:12px"><button class="acao-discreta" data-acao="abrir-arquivadas" type="button">Ver arquivadas · ' + disciplinasArquivadas().length + "</button></p>"
+        : "") +
+      "</section>";
+
+    return html;
+  }
+
+  function htmlArquivadas() {
+    const arquivadas = disciplinasArquivadas().sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0));
+    let html = '<div class="page-head"><span class="eyebrow">Arquivadas</span><h1>Disciplinas arquivadas</h1>' +
+      "<p>Ficam fora das abas e do painel, mas os dados continuam guardados — reative quando precisar.</p></div>";
+
+    if (!arquivadas.length) {
+      html += '<div class="vazio"><h3>Nenhuma disciplina arquivada</h3><p>Disciplinas encerradas podem ser arquivadas na própria aba, sem apagar o histórico.</p></div>';
+      return html;
+    }
+
+    html += arquivadas.map((d) => {
+      const meta = [d.curso, d.codigo].filter(Boolean).join(" · ") || (aulasDe(d.id).length + " aulas no cronograma");
+      return '<div class="arquivada-linha">' +
+        '<span class="arquivada-info"><i class="dot" style="background:' + esc(d.cor) + '"></i><strong>' + esc(d.nome) + "</strong><span>" + esc(meta) + "</span></span>" +
+        '<span class="arquivada-acoes">' +
+        '<button class="btn btn-sm" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">Ver</button>' +
+        '<button class="btn btn-sm btn-primary" data-acao="reativar-disc" data-disc="' + esc(d.id) + '" type="button">Reativar</button>' +
+        "</span></div>";
+    }).join("");
 
     return html;
   }
@@ -1423,7 +1548,7 @@
     const etiqueta = [d.curso, d.codigo, d.horario].filter(Boolean).join(" · ") || "Disciplina";
     let html = htmlAvisoArmazenamento() +
       '<div class="page-head"><span class="eyebrow" style="color:' + esc(d.cor) + '">' +
-      esc(etiqueta) + "</span><h1>" + esc(d.nome) + "</h1>" +
+      esc(etiqueta) + "</span><h1>" + esc(d.nome) + (d.arquivada ? ' <span class="pill pill-passada" style="vertical-align:middle">Arquivada</span>' : "") + "</h1>" +
       "<p>" + (corte.proxima
         ? "A próxima aula é " + esc(distancia(corte.proxima.data)) + ". Abaixo dela, as duas anteriores — registre o que aconteceu enquanto está fresco."
         : "Todas as aulas do cronograma já aconteceram. Estas são as últimas.") +
@@ -1444,7 +1569,7 @@
           const classe = a.data < HOJE ? "feita" : (corte.proxima && a.id === corte.proxima.id ? "atual" : "");
           return '<tr class="' + classe + '"><td class="data">' + esc(dataCurta(a.data)) + "</td>" +
             '<td class="data">' + celulaEditavel(a, "horario", faixaHora(a) || "—", faixaHora(a) || "") + "</td>" +
-            "<td>" + celulaEditavel(a, "assunto", a.assunto, a.assunto) + "</td>" +
+            "<td>" + celulaEditavel(a, "assunto", a.assunto, a.assunto) + htmlIndicadoresLinha(a) + "</td>" +
             '<td class="' + (a.unidade ? "" : "vazia") + '">' + celulaEditavel(a, "unidade", a.unidade || "—", a.unidade || "") + "</td>" +
             '<td class="num">' + (temNota(a) ? a.notas.length : "—") + "</td></tr>";
         }).join("") +
@@ -1454,7 +1579,12 @@
     html += '<div class="folha-acoes" style="margin-top:26px">' +
       '<button class="btn btn-sm" data-acao="exportar-disc" data-disc="' + esc(d.id) + '" type="button">Exportar esta disciplina</button>' +
       '<button class="btn btn-sm" data-acao="verificar-duplicatas" data-disc="' + esc(d.id) + '" type="button">Verificar duplicatas</button>' +
-      '<div class="direita"><button class="btn btn-sm btn-quiet" data-acao="remover-disc" data-disc="' + esc(d.id) + '" type="button">Remover disciplina</button></div>' +
+      '<div class="direita">' +
+      (d.arquivada
+        ? '<button class="btn btn-sm" data-acao="reativar-disc" data-disc="' + esc(d.id) + '" type="button">Reativar disciplina</button>'
+        : '<button class="btn btn-sm" data-acao="arquivar-disc" data-disc="' + esc(d.id) + '" type="button">Arquivar disciplina</button>') +
+      '<button class="btn btn-sm btn-quiet" data-acao="remover-disc" data-disc="' + esc(d.id) + '" type="button">Remover disciplina</button>' +
+      "</div>" +
       "</div>";
 
     return html;
@@ -1475,8 +1605,12 @@
       (faixaHora(a) ? '<span class="hora">' + esc(faixaHora(a)) + "</span>" : "") +
       (sala ? '<span class="sala">' + esc(sala) + "</span>" : "") +
       (temNota(a) ? '<span class="pill pill-nota">' + a.notas.length + (a.notas.length > 1 ? " anotações" : " anotação") + "</span>" : "") +
+      (a.incompleta
+        ? '<button class="pill pill-alerta" data-acao="alternar-incompleta" data-aula="' + esc(a.id) + '" type="button" title="Clique para marcar como concluído">⚠ Conteúdo pendente</button>'
+        : '<button class="acao-discreta" data-acao="alternar-incompleta" data-aula="' + esc(a.id) + '" type="button">Marcar conteúdo pendente</button>') +
       "</div>" +
       "<h3>" + esc(a.assunto) + "</h3>" +
+      htmlEtiquetas(a) +
       (temNota(a) ? '<div class="notas">' + a.notas.map((n) => htmlNota(a, n)).join("") + "</div>" : "") +
       (aberto
         ? '<div class="compositor">' +
@@ -1493,6 +1627,86 @@
   function htmlNota(a, n) {
     return '<div class="nota"><div><p>' + esc(n.texto) + "</p><time>" + esc(carimbo(n.em)) + "</time></div>" +
       '<button class="apagar" data-acao="apagar-nota" data-aula="' + esc(a.id) + '" data-nota="' + esc(n.id) + '" type="button" aria-label="Apagar anotação" title="Apagar anotação">✕</button></div>';
+  }
+
+  // selo de conteúdo pendente + etiquetas, exibidos junto do assunto no cronograma completo
+  function htmlIndicadoresLinha(a) {
+    const tags = a.tags || [];
+    if (!a.incompleta && !tags.length) return "";
+    return '<div class="linha-indicadores">' +
+      (a.incompleta ? '<span class="badge-mini badge-alerta">⚠ Pendente</span>' : "") +
+      tags.map((t) => '<span class="badge-mini">' + esc(t) + "</span>").join("") +
+      "</div>";
+  }
+
+  const SUGESTOES_ETIQUETA = ["Prova", "Revisão", "Aula prática", "Trabalho", "Seminário"];
+
+  // fileira de etiquetas de uma aula: os chips existentes, e o botão ou o editor para adicionar
+  function htmlEtiquetas(a) {
+    const tags = a.tags || [];
+    const chips = tags.map((t) =>
+      '<span class="etiqueta">' + esc(t) +
+      '<button data-acao="remover-etiqueta" data-aula="' + esc(a.id) + '" data-etiqueta="' + esc(t) + '" type="button" aria-label="Remover etiqueta ' + esc(t) + '">✕</button></span>'
+    ).join("");
+
+    if (!estado.etiquetasAbertas.has(a.id)) {
+      return '<div class="etiquetas">' + chips +
+        '<button class="etiqueta-add" data-acao="abrir-etiqueta" data-aula="' + esc(a.id) + '" type="button">+ etiqueta</button></div>';
+    }
+
+    return '<div class="etiquetas">' + chips +
+      '<div class="etiqueta-editor">' +
+      '<input type="text" class="etiqueta-input" data-foco="etiqueta-' + esc(a.id) + '" data-campo-etiqueta="' + esc(a.id) + '" placeholder="Nome da etiqueta">' +
+      SUGESTOES_ETIQUETA.filter((s) => !tags.some((t) => chave(t) === chave(s))).map((s) =>
+        '<button class="etiqueta-sugestao" data-acao="sugestao-etiqueta" data-aula="' + esc(a.id) + '" data-valor="' + esc(s) + '" type="button">' + esc(s) + "</button>"
+      ).join("") +
+      '<button class="celula-ok" data-acao="confirmar-etiqueta" data-aula="' + esc(a.id) + '" type="button" aria-label="Adicionar etiqueta" title="Adicionar">✓</button>' +
+      '<button class="celula-cancelar" data-acao="cancelar-etiqueta" data-aula="' + esc(a.id) + '" type="button" aria-label="Cancelar" title="Cancelar">✕</button>' +
+      "</div></div>";
+  }
+
+  function abrirEtiqueta(aulaId) {
+    estado.etiquetasAbertas.add(aulaId);
+    agendarDesenho();
+    setTimeout(() => {
+      const campo = document.querySelector('[data-campo-etiqueta="' + aulaId + '"]');
+      if (campo) campo.focus();
+    }, 20);
+  }
+
+  function fecharEtiqueta(aulaId) {
+    estado.etiquetasAbertas.delete(aulaId);
+    agendarDesenho();
+  }
+
+  async function adicionarEtiqueta(aulaId, valorBruto) {
+    const texto = String(valorBruto || "").trim();
+    if (!texto) { fecharEtiqueta(aulaId); return; }
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) return;
+    const atuais = aula.tags || [];
+    if (atuais.some((t) => chave(t) === chave(texto))) {
+      fecharEtiqueta(aulaId);
+      avisar("Essa etiqueta já está nesta aula.");
+      return;
+    }
+    fecharEtiqueta(aulaId);
+    await salvarAula(Object.assign({}, aula, { tags: atuais.concat([texto]) }));
+    agendarDesenho();
+  }
+
+  async function removerEtiqueta(aulaId, etiqueta) {
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) return;
+    await salvarAula(Object.assign({}, aula, { tags: (aula.tags || []).filter((t) => t !== etiqueta) }));
+    agendarDesenho();
+  }
+
+  async function alternarIncompleta(aulaId) {
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) return;
+    await salvarAula(Object.assign({}, aula, { incompleta: !aula.incompleta }));
+    agendarDesenho();
   }
 
   function ajustarAltura(area) {
@@ -1772,7 +1986,9 @@
           unidade = a.unidade || "";
           if (unidade) md += "\n### " + unidade + "\n";
         }
-        md += "\n**" + dataCurta(a.data) + "**" + (faixaHora(a) ? " · " + faixaHora(a) : "") + " — " + a.assunto + "\n";
+        md += "\n**" + dataCurta(a.data) + "**" + (faixaHora(a) ? " · " + faixaHora(a) : "") + " — " + a.assunto +
+          (a.incompleta ? " ⚠ *conteúdo não concluído*" : "") + "\n";
+        if (a.tags && a.tags.length) md += "*Etiquetas:* " + a.tags.join(", ") + "\n";
         if (temNota(a)) {
           a.notas.forEach((n) => {
             md += "- " + String(n.texto).replace(/\n+/g, " ") + "  <!-- " + carimbo(n.em) + " -->\n";
@@ -1974,6 +2190,15 @@
     else if (acao === "cancelar-nota") { estado.abertos.delete(alvo.dataset.aula); delete estado.rascunhos[alvo.dataset.aula]; agendarDesenho(); }
     else if (acao === "salvar-nota") salvarNota(alvo.dataset.aula);
     else if (acao === "apagar-nota") apagarNota(alvo.dataset.aula, alvo.dataset.nota);
+    else if (acao === "alternar-incompleta") alternarIncompleta(alvo.dataset.aula);
+    else if (acao === "abrir-etiqueta") abrirEtiqueta(alvo.dataset.aula);
+    else if (acao === "cancelar-etiqueta") fecharEtiqueta(alvo.dataset.aula);
+    else if (acao === "sugestao-etiqueta") adicionarEtiqueta(alvo.dataset.aula, alvo.dataset.valor);
+    else if (acao === "confirmar-etiqueta") {
+      const campo = document.querySelector('[data-campo-etiqueta="' + alvo.dataset.aula + '"]');
+      adicionarEtiqueta(alvo.dataset.aula, campo ? campo.value : "");
+    }
+    else if (acao === "remover-etiqueta") removerEtiqueta(alvo.dataset.aula, alvo.dataset.etiqueta);
     else if (acao === "exportar-disc") exportar(alvo.dataset.disc);
     else if (acao === "alternar-crono") { estado.todasAsAulas = !estado.todasAsAulas; }
     else if (acao === "editar-celula") abrirEdicaoCelula(alvo.dataset.aula, alvo.dataset.campo);
@@ -1986,6 +2211,16 @@
       removerDuplicadas(alvo.dataset.disc).then((n) => {
         agendarDesenho();
         avisar(n ? n + (n > 1 ? " aulas duplicadas foram removidas." : " aula duplicada foi removida.") : "Nenhuma duplicata encontrada.");
+      });
+    }
+    else if (acao === "abrir-arquivadas") { estado.aba = "arquivadas"; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    else if (acao === "arquivar-disc" || acao === "reativar-disc") {
+      const d = porId(estado.disciplinas, alvo.dataset.disc);
+      if (!d) return;
+      const arquivar = acao === "arquivar-disc";
+      salvarDisciplina(Object.assign({}, d, { arquivada: arquivar })).then(() => {
+        agendarDesenho();
+        avisar("“" + d.nome + "” foi " + (arquivar ? "arquivada." : "reativada."));
       });
     }
     else if (acao === "remover-disc") {
@@ -2021,6 +2256,11 @@
     if (ev.target.classList && ev.target.classList.contains("celula-input")) {
       if (ev.key === "Enter") { ev.preventDefault(); salvarCampoCronograma(ev.target.dataset.aula, ev.target.dataset.campo, ev.target.value); }
       else if (ev.key === "Escape") { ev.preventDefault(); fecharEdicaoCelula(); }
+      return;
+    }
+    if (ev.target.classList && ev.target.classList.contains("etiqueta-input")) {
+      if (ev.key === "Enter") { ev.preventDefault(); adicionarEtiqueta(ev.target.dataset.campoEtiqueta, ev.target.value); }
+      else if (ev.key === "Escape") { ev.preventDefault(); fecharEtiqueta(ev.target.dataset.campoEtiqueta); }
       return;
     }
     if (ev.key === "Enter" && !$("#capa-editar").hidden && ev.target.tagName === "INPUT" && ev.target.type === "text") {
