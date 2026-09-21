@@ -30,6 +30,13 @@ mantidos no vault do Obsidian.
   selo visível no card e no cronograma, e entra no markdown exportado.
 - **Arquivar disciplina** — tira uma disciplina encerrada das abas e do painel sem apagar nada.
   Fica reunida numa aba "Arquivadas", com um botão para reativar quando precisar.
+- **Atrasar ou adiantar conteúdo** — "Atrasar/adiantar conteúdo" na aba da disciplina desloca os
+  assuntos das aulas futuras a partir da próxima aula, sem mexer em datas, horários ou salas.
+  Uma prévia mostra o antes/depois de cada aula afetada antes de aplicar. Atrasar N aulas repete
+  o assunto atual como "(continuação)" nas N aulas seguintes e empurra o resto — o(s) último(s)
+  assunto(s) do cronograma ficam sem aula, avisados na prévia. Adiantar N aulas pula direto para
+  o assunto de N aulas à frente — o(s) assunto(s) pulados são dados como já cobertos, e sobra
+  "(a definir)" no fim do cronograma.
 
 ## Formatos de plano de ensino reconhecidos
 
