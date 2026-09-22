@@ -641,10 +641,6 @@
   .campo label { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
   .cores { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; padding-top: 2px; }
 
-  .direcao-opcoes { display: inline-flex; padding: 3px; background: var(--surface-3); border-radius: 11px; gap: 2px; }
-  .dir-op { padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--ink-2); transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
-  .dir-op:hover { color: var(--ink); }
-  .dir-op[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
   .cor-op {
     width: 22px; height: 22px; border-radius: 50%;
     border: 2px solid transparent;
@@ -849,41 +845,6 @@
       <div class="direita">
         <button class="btn" id="btn-editar-cancelar" type="button">Cancelar</button>
         <button class="btn btn-primary" id="btn-editar-salvar" type="button">Salvar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="capa" id="capa-remanejar" hidden>
-  <div class="folha folha-media" role="dialog" aria-modal="true" aria-labelledby="titulo-remanejar">
-    <div class="folha-topo">
-      <div>
-        <h2 id="titulo-remanejar">Atrasar ou adiantar conteúdo</h2>
-        <p>A partir da próxima aula, desloca os assuntos das aulas seguintes. As datas, horários e salas do cronograma não mudam.</p>
-      </div>
-      <button class="fechar" id="fechar-remanejar" type="button" aria-label="Fechar">✕</button>
-    </div>
-
-    <div class="campos">
-      <div class="campo">
-        <label>Direção</label>
-        <div class="direcao-opcoes" id="remanejar-direcao">
-          <button type="button" class="dir-op" data-direcao="atraso" aria-pressed="true">Atrasar</button>
-          <button type="button" class="dir-op" data-direcao="avanco" aria-pressed="false">Adiantar</button>
-        </div>
-      </div>
-      <div class="campo">
-        <label for="remanejar-n">Quantas aulas</label>
-        <input type="number" id="remanejar-n" min="1" value="1">
-      </div>
-    </div>
-
-    <div class="previa" id="remanejar-previa"></div>
-
-    <div class="folha-acoes">
-      <div class="direita">
-        <button class="btn" id="btn-remanejar-cancelar" type="button">Cancelar</button>
-        <button class="btn btn-primary" id="btn-remanejar-confirmar" type="button" disabled>Aplicar</button>
       </div>
     </div>
   </div>
@@ -1595,7 +1556,6 @@
       '</p><div class="head-acoes">' +
       '<button class="btn btn-sm" data-acao="editar-disc" data-disc="' + esc(d.id) + '" type="button">Editar disciplina</button>' +
       '<button class="btn btn-sm" data-acao="reimportar" data-disc="' + esc(d.id) + '" type="button">Atualizar cronograma</button>' +
-      (corte.proxima ? '<button class="btn btn-sm" data-acao="remanejar-disc" data-disc="' + esc(d.id) + '" type="button">Atrasar/adiantar conteúdo</button>' : "") +
       "</div></div>";
 
     html += cartoes.length
@@ -1974,124 +1934,6 @@
       (herdadas ? " · " + herdadas + (herdadas > 1 ? " aulas mantiveram suas anotações" : " aula manteve suas anotações") : ""));
   }
 
-  /* ============================================================
-     atrasar / adiantar conteúdo
-     ============================================================ */
-
-  const remanejar = { discId: null, direcao: "atraso", plano: null };
-
-  function abrirRemanejar(discId) {
-    const corte = recorte(discId);
-    if (!corte.proxima) { avisar("Esta disciplina não tem uma próxima aula para servir de referência."); return; }
-    remanejar.discId = discId;
-    remanejar.direcao = "atraso";
-    $("#remanejar-n").value = "1";
-    desenharDirecaoRemanejar();
-    $("#capa-remanejar").hidden = false;
-    document.body.style.overflow = "hidden";
-    atualizarPreviaRemanejamento();
-  }
-
-  function fecharRemanejar() {
-    $("#capa-remanejar").hidden = true;
-    document.body.style.overflow = "";
-    remanejar.discId = null;
-    remanejar.plano = null;
-  }
-
-  function desenharDirecaoRemanejar() {
-    document.querySelectorAll("#remanejar-direcao .dir-op").forEach((b) => {
-      b.setAttribute("aria-pressed", String(b.dataset.direcao === remanejar.direcao));
-    });
-  }
-
-  // calcula o novo assunto/unidade de cada aula futura a partir da próxima aula, deslocando
-  // n posições para trás (atraso: a referência não muda, o restante escorrega e o final "cai
-  // fora" do cronograma) ou para a frente (avanço: a referência já pula para o assunto de n
-  // aulas depois, e sobra espaço "a definir" no final)
-  function planoRemanejamento(discId, direcao, nBruto) {
-    const corte = recorte(discId);
-    if (!corte.proxima) return null;
-    const futuras = aulasDe(discId).filter((a) => a.data >= corte.proxima.data);
-    const k = futuras.length;
-    if (k < 2) return { futuras: futuras, k: k, n: 0, mudancas: [], perdidos: [], semEspaco: true };
-
-    const n = Math.max(1, Math.min(Math.round(nBruto) || 1, k - 1));
-    const mudancas = [];
-    const perdidos = [];
-
-    if (direcao === "atraso") {
-      for (let i = 0; i < k; i++) {
-        const alvo = futuras[i];
-        const novo = i === 0
-          ? { assunto: alvo.assunto, unidade: alvo.unidade || "" }
-          : i < n
-            ? { assunto: futuras[0].assunto + " (continuação)", unidade: futuras[0].unidade || "" }
-            : { assunto: futuras[i - n].assunto, unidade: futuras[i - n].unidade || "" };
-        if (novo.assunto !== alvo.assunto || novo.unidade !== (alvo.unidade || "")) mudancas.push({ aula: alvo, depois: novo });
-      }
-      for (let j = k - n; j < k; j++) perdidos.push(futuras[j].assunto);
-    } else {
-      for (let i = 0; i < k; i++) {
-        const alvo = futuras[i];
-        const novo = i <= k - 1 - n
-          ? { assunto: futuras[i + n].assunto, unidade: futuras[i + n].unidade || "" }
-          : { assunto: "(a definir)", unidade: futuras[k - 1].unidade || "" };
-        if (novo.assunto !== alvo.assunto || novo.unidade !== (alvo.unidade || "")) mudancas.push({ aula: alvo, depois: novo });
-      }
-      for (let j = 0; j < n; j++) perdidos.push(futuras[j].assunto);
-    }
-
-    return { futuras: futuras, k: k, n: n, mudancas: mudancas, perdidos: perdidos, semEspaco: false };
-  }
-
-  function atualizarPreviaRemanejamento() {
-    const plano = planoRemanejamento(remanejar.discId, remanejar.direcao, +$("#remanejar-n").value);
-    remanejar.plano = plano;
-    const caixa = $("#remanejar-previa");
-
-    if (!plano || plano.semEspaco) {
-      caixa.innerHTML = '<p style="margin:0;font-size:13px;color:var(--warm)">Não há aulas futuras suficientes depois da próxima para reorganizar. Adicione mais aulas ao cronograma primeiro.</p>';
-      $("#btn-remanejar-confirmar").disabled = true;
-      return;
-    }
-
-    $("#remanejar-n").max = String(plano.k - 1);
-
-    if (!plano.mudancas.length) {
-      caixa.innerHTML = '<p style="margin:0;font-size:13px;color:var(--ink-3)">Nenhuma aula muda de assunto com essas opções.</p>';
-      $("#btn-remanejar-confirmar").disabled = true;
-      return;
-    }
-
-    const rotuloPerdidos = remanejar.direcao === "atraso"
-      ? (plano.perdidos.length > 1 ? "Ficam sem aula no cronograma atual: " : "Fica sem aula no cronograma atual: ")
-      : (plano.perdidos.length > 1 ? "Considerados já cobertos: " : "Considerado já coberto: ");
-
-    caixa.innerHTML =
-      '<div class="previa-topo"><strong>' + plano.mudancas.length + (plano.mudancas.length > 1 ? " aulas serão alteradas" : " aula será alterada") + "</strong></div>" +
-      '<div class="previa-lista"><table><thead><tr><th>Data</th><th>Antes</th><th>Depois</th></tr></thead><tbody>' +
-      plano.mudancas.map((m) =>
-        '<tr><td class="data">' + esc(dataCurta(m.aula.data)) + "</td><td>" + esc(m.aula.assunto) + "</td><td>" + esc(m.depois.assunto) + "</td></tr>"
-      ).join("") +
-      "</tbody></table></div>" +
-      (plano.perdidos.length ? '<p class="aviso">' + rotuloPerdidos + esc(plano.perdidos.join("; ")) + "</p>" : "");
-
-    $("#btn-remanejar-confirmar").disabled = false;
-  }
-
-  async function confirmarRemanejamento() {
-    const plano = remanejar.plano;
-    if (!plano || !plano.mudancas.length) return;
-    const direcaoUsada = remanejar.direcao;
-    for (const m of plano.mudancas) {
-      await salvarAula(Object.assign({}, m.aula, { assunto: m.depois.assunto, unidade: m.depois.unidade }));
-    }
-    fecharRemanejar();
-    agendarDesenho();
-    avisar((direcaoUsada === "atraso" ? "Conteúdo atrasado" : "Conteúdo adiantado") + " em " + plano.mudancas.length + (plano.mudancas.length > 1 ? " aulas." : " aula."));
-  }
-
   function exemplo() {
     const base = new Date();
     const assuntos = [
@@ -2320,14 +2162,6 @@
       return;
     }
 
-    if (!$("#capa-remanejar").hidden) {
-      const dirOp = ev.target.closest("[data-direcao]");
-      if (dirOp) { remanejar.direcao = dirOp.dataset.direcao; desenharDirecaoRemanejar(); atualizarPreviaRemanejamento(); return; }
-      if (ev.target.closest("#btn-remanejar-confirmar")) { confirmarRemanejamento(); return; }
-      if (ev.target.closest("#fechar-remanejar") || ev.target.closest("#btn-remanejar-cancelar") || ev.target === $("#capa-remanejar")) fecharRemanejar();
-      return;
-    }
-
     const aba = ev.target.closest("[data-aba]");
     if (aba) { estado.aba = aba.dataset.aba; estado.todasAsAulas = false; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
 
@@ -2352,7 +2186,6 @@
     if (acao === "importar") abrirImportador(null);
     else if (acao === "editar-disc") abrirEditor(alvo.dataset.disc);
     else if (acao === "reimportar") abrirImportador(alvo.dataset.disc);
-    else if (acao === "remanejar-disc") abrirRemanejar(alvo.dataset.disc);
     else if (acao === "abrir") { estado.aba = alvo.dataset.disc; estado.todasAsAulas = false; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); }
     else if (acao === "abrir-nota") abrirNota(alvo.dataset.aula);
     else if (acao === "cancelar-nota") { estado.abertos.delete(alvo.dataset.aula); delete estado.rascunhos[alvo.dataset.aula]; agendarDesenho(); }
@@ -2418,7 +2251,6 @@
       return;
     }
     if (campo.id === "entrada" || campo.id === "campo-ano") atualizarPrevia();
-    if (campo.id === "remanejar-n") atualizarPreviaRemanejamento();
   });
 
   document.addEventListener("keydown", (ev) => {
@@ -2437,13 +2269,7 @@
       salvarEdicao();
       return;
     }
-    if (ev.key === "Enter" && ev.target.id === "remanejar-n" && !$("#btn-remanejar-confirmar").disabled) {
-      ev.preventDefault();
-      confirmarRemanejamento();
-      return;
-    }
     if (ev.key === "Escape" && !$("#capa-editar").hidden) { fecharEditor(); return; }
-    if (ev.key === "Escape" && !$("#capa-remanejar").hidden) { fecharRemanejar(); return; }
     if (ev.key === "Escape" && !$("#capa-confirmar").hidden) { responder(false); return; }
     if (ev.key === "Escape" && !$("#capa-importador").hidden) { fecharImportador(); return; }
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") {
