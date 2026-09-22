@@ -773,6 +773,21 @@
     margin-bottom: 20px;
   }
 
+  .aviso-info {
+    padding: 13px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+
+  .dot-inline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 3px; }
+
+  .pendencias-lista { display: grid; gap: 8px; }
+
+  .linha-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+
   @media (max-width: 620px) {
     .aula { grid-template-columns: 52px 1fr; gap: 14px; padding: 17px 16px; }
     .cal .dia { font-size: 25px; }
@@ -1408,12 +1423,12 @@
     const foco = ativo && ativo.dataset ? ativo.dataset.foco : null;
     const selecao = ativo && ativo.selectionStart;
 
-    if (estado.aba !== "painel" && estado.aba !== "hoje" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
+    if (estado.aba !== "painel" && estado.aba !== "semana" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
 
     desenharAbas();
     const alvo = $("#conteudo");
     alvo.innerHTML = estado.aba === "painel" ? htmlPainel()
-      : estado.aba === "hoje" ? htmlHoje()
+      : estado.aba === "semana" ? htmlSemana()
       : estado.aba === "arquivadas" ? htmlArquivadas()
       : htmlDisciplina(porId(estado.disciplinas, estado.aba));
 
@@ -1436,7 +1451,7 @@
     const abas = $("#abas");
     const itens = [
       '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>',
-      '<button class="tab" role="tab" data-aba="hoje" aria-selected="' + (estado.aba === "hoje") + '" type="button">Hoje</button>'
+      '<button class="tab" role="tab" data-aba="semana" aria-selected="' + (estado.aba === "semana") + '" type="button">Semana</button>'
     ];
     disciplinasAtivas()
       .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))
@@ -1549,13 +1564,13 @@
     return '<div class="resumo-item' + (classe ? " " + classe : "") + '"><strong class="num">' + numero + "</strong><span>" + esc(rotulo) + "</span></div>";
   }
 
-  function htmlHoje() {
+  function htmlSemana() {
     if (!estado.pronto) return '<p class="eyebrow">Carregando…</p>';
     const ativas = disciplinasAtivas();
     if (!ativas.length) {
       return htmlAvisoArmazenamento() +
-        '<div class="page-head"><span class="eyebrow">Hoje</span><h1>Comece pelo plano de ensino</h1>' +
-        "<p>Importe o cronograma de uma disciplina para ver aqui as pendências e o conteúdo de cada dia.</p></div>" +
+        '<div class="page-head"><span class="eyebrow">Semana</span><h1>Comece pelo plano de ensino</h1>' +
+        "<p>Importe o cronograma de uma disciplina para ver aqui o panorama da semana: aulas, pendências e provas.</p></div>" +
         '<div class="vazio"><h3>Nenhuma disciplina ainda</h3><p>Abra a nota do plano de ensino no Obsidian, copie o cronograma e cole aqui.</p>' +
         '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
     }
@@ -1565,8 +1580,9 @@
       .map((d) => ({ d: d, corte: recorte(d.id) }))
       .filter((x) => x.corte.proxima && x.corte.proxima.data === HOJE);
 
-    // aulas marcadas como prova nos próximos 7 dias (hoje incluído)
     const fimSemana = isoDe(new Date(dataDe(HOJE).getTime() + 6 * 86400000));
+
+    // aulas marcadas como prova nos próximos 7 dias (hoje incluído)
     const provas = [];
     ativas.forEach((d) => {
       aulasDe(d.id).forEach((a) => {
@@ -1576,17 +1592,27 @@
     });
     provas.sort((a, b) => (a.aula.data < b.aula.data ? -1 : 1));
 
-    const pendencias = hoje.filter((x) => {
+    // o restante da semana (amanhã até 6 dias à frente), sem repetir a aula de hoje
+    const restoSemana = proximas(200).filter((a) => a.data > HOJE && a.data <= fimSemana);
+
+    // qualquer aula (passada ou futura) ainda marcada como conteúdo pendente, em toda disciplina ativa
+    const pendentesEnsino = [];
+    ativas.forEach((d) => {
+      aulasDe(d.id).forEach((a) => { if (a.incompleta) pendentesEnsino.push({ d: d, a: a }); });
+    });
+    pendentesEnsino.sort((x, y) => (x.a.data < y.a.data ? -1 : 1));
+
+    const pendenciasHoje = hoje.filter((x) => {
       const anterior = x.corte.anteriores[x.corte.anteriores.length - 1];
       return anterior && anterior.incompleta;
     }).length;
 
     let html = htmlAvisoArmazenamento() +
-      '<div class="page-head"><span class="eyebrow">Hoje</span><h1>' + esc(dataExtenso(HOJE)) + "</h1></div>";
+      '<div class="page-head"><span class="eyebrow">Semana</span><h1>' + esc(dataExtenso(HOJE)) + " até " + esc(dataCurta(fimSemana)) + "</h1></div>";
 
     html += '<div class="resumo-dia">' +
       htmlResumoItem(hoje.length, hoje.length === 1 ? "aula hoje" : "aulas hoje", "") +
-      htmlResumoItem(pendencias, pendencias === 1 ? "pendência de aula anterior" : "pendências de aula anterior", pendencias ? "alerta" : "") +
+      htmlResumoItem(pendentesEnsino.length, pendentesEnsino.length === 1 ? "conteúdo pendente" : "conteúdos pendentes", pendentesEnsino.length ? "alerta" : "") +
       htmlResumoItem(provas.length, provas.length === 1 ? "prova esta semana" : "provas esta semana", provas.length ? "alerta" : "") +
       "</div>";
 
@@ -1596,7 +1622,7 @@
         "</div></section>";
     }
 
-    html += '<section style="margin-top:30px"><h2>Aulas de hoje</h2>';
+    html += '<section style="margin-top:30px"><h2>Hoje</h2>';
     if (!hoje.length) {
       const prox = proximas(1)[0];
       const dProx = prox ? porId(estado.disciplinas, prox.disciplinaId) : null;
@@ -1606,14 +1632,40 @@
           : "Não há mais aulas futuras no cronograma.") +
         "</p></div>";
     } else {
-      html += hoje.map((x) => htmlDisciplinaHoje(x.d, x.corte)).join("");
+      html += hoje.map((x) => htmlDisciplinaSemana(x.d, x.corte)).join("");
     }
     html += "</section>";
+
+    if (restoSemana.length) {
+      html += '<section style="margin-top:30px"><h2>Resto da semana</h2>' + htmlAgenda(restoSemana) + "</section>";
+    }
+
+    if (pendentesEnsino.length && pendenciasHoje !== pendentesEnsino.length) {
+      // já mostrei as de hoje no alerta de cada card; aqui listo o conjunto completo,
+      // incluindo as que não têm aula hoje pra lembrar
+      html += '<section style="margin-top:30px"><h2>Conteúdo pendente</h2><div class="pendencias-lista">' +
+        pendentesEnsino.map((x) => htmlPendenciaEnsino(x.d, x.a)).join("") +
+        "</div></section>";
+    }
+
+    html += '<section style="margin-top:30px"><h2>Reuniões da semana</h2>' +
+      '<div class="aviso-info">Conecte o Google Calendar em <strong>claude.ai → Configurações → Conectores</strong> pra ver aqui os compromissos da semana.</div></section>';
+
+    html += '<section style="margin-top:30px"><h2>Pendências gerais</h2>' +
+      '<div class="aviso-info">Ainda não há uma tarefa configurada pra trazer as pendências dos seus resumos semanais do Obsidian.</div></section>';
 
     return html;
   }
 
-  function htmlDisciplinaHoje(d, corte) {
+  function htmlPendenciaEnsino(d, a) {
+    return '<div class="alerta-pendente-compacto"><span><i class="dot-inline" style="background:' + esc(d.cor) + '"></i>' +
+      "<strong>" + esc(d.nome) + "</strong> · aula de " + esc(dataCurta(a.data)) + ": " + esc(a.assunto) +
+      (temNota(a) ? " — última nota: “" + esc(a.notas[a.notas.length - 1].texto) + "”" : "") +
+      "</span>" +
+      '<button class="acao-discreta" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">Ver disciplina</button></div>';
+  }
+
+  function htmlDisciplinaSemana(d, corte) {
     const sala = salaDe(d);
     const anterior = corte.anteriores[corte.anteriores.length - 1];
     let html = '<div class="dia-disciplina">' +
@@ -1698,7 +1750,9 @@
           return '<button class="linha" data-acao="abrir" data-disc="' + esc(a.disciplinaId) + '" type="button">' +
             '<span class="hora num">' + esc(a.inicio || "—") + "</span>" +
             '<span class="conteudo"><span class="assunto">' + esc(a.assunto) + "</span>" +
-            '<span class="disc"><i class="dot" style="background:' + esc(d ? d.cor : "#888") + '"></i>' + esc(d ? d.nome : "Disciplina") + (salaDe(d) ? " · " + esc(salaDe(d)) : "") + "</span></span>" +
+            '<span class="disc"><i class="dot" style="background:' + esc(d ? d.cor : "#888") + '"></i>' + esc(d ? d.nome : "Disciplina") + (salaDe(d) ? " · " + esc(salaDe(d)) : "") + "</span>" +
+            (a.tags && a.tags.length ? '<span class="linha-tags">' + a.tags.map((t) => '<span class="badge-mini">' + esc(t) + "</span>").join("") + "</span>" : "") +
+            "</span>" +
             '<span class="seta">›</span></button>';
         }).join("") +
         "</div>";
