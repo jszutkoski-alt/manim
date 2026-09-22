@@ -5,23 +5,22 @@ mantidos no vault do Obsidian.
 
 ## O que faz
 
-- **Abas no topo** — `Painel`, `Semana` e uma aba por disciplina.
-- **Painel** — a próxima aula em destaque, a agenda das aulas seguintes agrupada por dia e o
-  andamento de cada disciplina (aulas dadas sobre o total e quantas já têm anotação).
-- **Semana** — o panorama da semana, em blocos:
+- **Abas no topo** — `Painel` e uma aba por disciplina.
+- **Painel** — o panorama do que importa agora, em blocos:
   - *Resumo em números*: aulas hoje, conteúdos pendentes em aberto, provas na semana.
+  - *Hoje* (quando há aula) ou *Próxima aula* (quando não há): o card de cada aula do dia, com
+    a mesma opção de comentário rápido da aba da disciplina, e um alerta quando a aula anterior
+    ficou com conteúdo pendente.
   - *Provas da semana*: aulas marcadas com a etiqueta "Prova" nos próximos 7 dias, cada uma com
     um botão que copia um resumo do conteúdo dado desde a última prova daquela disciplina —
     para colar numa conversa com o Claude junto do banco de questões do Obsidian e montar a
     prova por lá; o app em si não lê o vault nem gera a prova sozinho.
-  - *Hoje*: o card de cada aula do dia, com a mesma opção de comentário rápido da aba da
-    disciplina, e um alerta quando a aula anterior ficou com conteúdo pendente.
-  - *Resto da semana*: a agenda dos próximos dias, com as etiquetas de cada aula prevista.
+  - *Depois dessa*: a agenda dos próximos dias, agrupada por dia, com as etiquetas de cada aula
+    prevista.
   - *Conteúdo pendente*: toda aula marcada como pendente em qualquer disciplina ativa — mesmo
     as que não têm aula hoje, pra não passar batido.
-  - *Reuniões da semana* e *Pendências gerais*: hoje aparecem como aviso ("conecte o Google
-    Calendar…", "configure a tarefa agendada…") — ficam prontas pra receber dado assim que essas
-    duas integrações existirem.
+  - *Andamento do semestre*: aulas dadas sobre o total de cada disciplina, e quantas já têm
+    anotação.
 - **Aba da disciplina** — as duas aulas anteriores e a próxima, uma abaixo da outra, cada uma
   com data, horário, sala, assunto e comentários. Abaixo, o cronograma completo recolhido.
 - **Importar plano de ensino** — cole o markdown da nota e confirme a prévia do que foi lido.

@@ -773,15 +773,6 @@
     margin-bottom: 20px;
   }
 
-  .aviso-info {
-    padding: 13px 16px;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    font-size: 13.5px;
-    color: var(--ink-2);
-  }
-
   .dot-inline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 3px; }
 
   .pendencias-lista { display: grid; gap: 8px; }
@@ -1423,12 +1414,11 @@
     const foco = ativo && ativo.dataset ? ativo.dataset.foco : null;
     const selecao = ativo && ativo.selectionStart;
 
-    if (estado.aba !== "painel" && estado.aba !== "semana" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
+    if (estado.aba !== "painel" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
 
     desenharAbas();
     const alvo = $("#conteudo");
     alvo.innerHTML = estado.aba === "painel" ? htmlPainel()
-      : estado.aba === "semana" ? htmlSemana()
       : estado.aba === "arquivadas" ? htmlArquivadas()
       : htmlDisciplina(porId(estado.disciplinas, estado.aba));
 
@@ -1450,8 +1440,7 @@
   function desenharAbas() {
     const abas = $("#abas");
     const itens = [
-      '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>',
-      '<button class="tab" role="tab" data-aba="semana" aria-selected="' + (estado.aba === "semana") + '" type="button">Semana</button>'
+      '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>'
     ];
     disciplinasAtivas()
       .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))
@@ -1512,35 +1501,90 @@
         '<button class="btn btn-primary" data-acao="abrir-arquivadas" type="button">Ver arquivadas</button></div>';
     }
 
-    const lista = proximas(12);
-    const destaque = lista[0];
+    // disciplinas com aula hoje, já com o recorte anterior/próxima calculado
+    const hoje = ativas
+      .map((d) => ({ d: d, corte: recorte(d.id) }))
+      .filter((x) => x.corte.proxima && x.corte.proxima.data === HOJE);
+
+    const fimSemana = isoDe(new Date(dataDe(HOJE).getTime() + 6 * 86400000));
+
+    // aulas marcadas como prova nos próximos 7 dias (hoje incluído)
+    const provas = [];
+    ativas.forEach((d) => {
+      aulasDe(d.id).forEach((a) => {
+        if (a.data < HOJE || a.data > fimSemana) return;
+        if ((a.tags || []).some((t) => chave(t).indexOf("prova") !== -1)) provas.push({ d: d, aula: a });
+      });
+    });
+    provas.sort((a, b) => (a.aula.data < b.aula.data ? -1 : 1));
+
+    // qualquer aula (passada ou futura) ainda marcada como conteúdo pendente, em toda disciplina ativa
+    const pendentesEnsino = [];
+    ativas.forEach((d) => {
+      aulasDe(d.id).forEach((a) => { if (a.incompleta) pendentesEnsino.push({ d: d, a: a }); });
+    });
+    pendentesEnsino.sort((x, y) => (x.a.data < y.a.data ? -1 : 1));
+
     let html = htmlAvisoArmazenamento() +
       '<div class="page-head"><span class="eyebrow">Painel</span><h1>Suas próximas aulas</h1></div>';
 
-    if (destaque) {
-      const d = porId(estado.disciplinas, destaque.disciplinaId);
-      html += '<section class="destaque">' +
+    html += '<div class="resumo-dia">' +
+      htmlResumoItem(hoje.length, hoje.length === 1 ? "aula hoje" : "aulas hoje", "") +
+      htmlResumoItem(pendentesEnsino.length, pendentesEnsino.length === 1 ? "conteúdo pendente" : "conteúdos pendentes", pendentesEnsino.length ? "alerta" : "") +
+      htmlResumoItem(provas.length, provas.length === 1 ? "prova esta semana" : "provas esta semana", provas.length ? "alerta" : "") +
+      "</div>";
+
+    // a aula (ou aulas) já em destaque no topo, pra não repetir mais abaixo em "Depois dessa"
+    let jaMostradas = new Set();
+    const destaqueUnico = proximas(1)[0];
+
+    if (hoje.length) {
+      jaMostradas = new Set(hoje.map((x) => x.corte.proxima.id));
+      html += '<section style="margin-top:30px"><h2>Hoje</h2>' + hoje.map((x) => htmlCardHoje(x.d, x.corte)).join("") + "</section>";
+    } else if (destaqueUnico) {
+      jaMostradas.add(destaqueUnico.id);
+      const d = porId(estado.disciplinas, destaqueUnico.disciplinaId);
+      html += '<section class="destaque" style="margin-top:30px">' +
         "<div>" +
-        '<span class="quando">' + esc(destaque.data === HOJE ? "Hoje" : "Próxima aula · " + distancia(destaque.data)) + "</span>" +
-        "<h3>" + esc(destaque.assunto) + "</h3>" +
+        '<span class="quando">Próxima aula · ' + esc(distancia(destaqueUnico.data)) + "</span>" +
+        "<h3>" + esc(destaqueUnico.assunto) + "</h3>" +
         '<p class="detalhe">' +
         (d ? '<i class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + esc(d.cor) + ';margin-right:6px"></i>' + esc(d.nome) + " · " : "") +
-        esc(dataExtenso(destaque.data)) + (faixaHora(destaque) ? " · " + esc(faixaHora(destaque)) : "") +
+        esc(dataExtenso(destaqueUnico.data)) + (faixaHora(destaqueUnico) ? " · " + esc(faixaHora(destaqueUnico)) : "") +
         (salaDe(d) ? " · " + esc(salaDe(d)) : "") +
         "</p></div>" +
-        '<div class="lado"><button class="btn" data-acao="abrir" data-disc="' + esc(destaque.disciplinaId) + '" type="button">Abrir disciplina</button></div>' +
+        '<div class="lado"><button class="btn" data-acao="abrir" data-disc="' + esc(destaqueUnico.disciplinaId) + '" type="button">Abrir disciplina</button></div>' +
         "</section>";
     }
 
-    const restantes = lista.slice(1);
+    if (provas.length) {
+      html += '<section style="margin-top:30px"><h2>Provas da semana</h2><div class="provas-lista">' +
+        provas.map((p) => htmlProvaCard(p.d, p.aula)).join("") +
+        "</div></section>";
+    }
+
+    const restantes = proximas(12).filter((a) => !jaMostradas.has(a.id));
     if (restantes.length) {
-      html += '<section style="margin-top:34px"><h2>Depois dessa</h2>' + htmlAgenda(restantes) + "</section>";
-    } else if (!destaque) {
+      html += '<section style="margin-top:30px"><h2>Depois dessa</h2>' + htmlAgenda(restantes) + "</section>";
+    } else if (!hoje.length && !destaqueUnico) {
       html += '<div class="vazio"><h3>Semestre encerrado</h3><p>Não há aulas futuras no cronograma. Abra uma disciplina para rever o que já foi dado ou importe um novo plano.</p>' +
         '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
     }
 
-    html += '<section style="margin-top:34px"><h2>Andamento do semestre</h2><div class="progresso">' +
+    // não repete aqui as pendências já alertadas dentro de um card de "Hoje"
+    const idsAlertadosHoje = new Set();
+    hoje.forEach((x) => {
+      const anterior = x.corte.anteriores[x.corte.anteriores.length - 1];
+      if (anterior && anterior.incompleta) idsAlertadosHoje.add(anterior.id);
+    });
+    const pendentesRestantes = pendentesEnsino.filter((x) => !idsAlertadosHoje.has(x.a.id));
+    if (pendentesRestantes.length) {
+      html += '<section style="margin-top:30px"><h2>Conteúdo pendente</h2><div class="pendencias-lista">' +
+        pendentesRestantes.map((x) => htmlPendenciaEnsino(x.d, x.a)).join("") +
+        "</div></section>";
+    }
+
+    html += '<section style="margin-top:30px"><h2>Andamento do semestre</h2><div class="progresso">' +
       ativas.slice().sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0)).map((d) => {
         const todas = aulasDe(d.id);
         const dadas = todas.filter((a) => a.data < HOJE).length;
@@ -1564,99 +1608,6 @@
     return '<div class="resumo-item' + (classe ? " " + classe : "") + '"><strong class="num">' + numero + "</strong><span>" + esc(rotulo) + "</span></div>";
   }
 
-  function htmlSemana() {
-    if (!estado.pronto) return '<p class="eyebrow">Carregando…</p>';
-    const ativas = disciplinasAtivas();
-    if (!ativas.length) {
-      return htmlAvisoArmazenamento() +
-        '<div class="page-head"><span class="eyebrow">Semana</span><h1>Comece pelo plano de ensino</h1>' +
-        "<p>Importe o cronograma de uma disciplina para ver aqui o panorama da semana: aulas, pendências e provas.</p></div>" +
-        '<div class="vazio"><h3>Nenhuma disciplina ainda</h3><p>Abra a nota do plano de ensino no Obsidian, copie o cronograma e cole aqui.</p>' +
-        '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
-    }
-
-    // disciplinas com aula hoje, já com o recorte anterior/próxima calculado
-    const hoje = ativas
-      .map((d) => ({ d: d, corte: recorte(d.id) }))
-      .filter((x) => x.corte.proxima && x.corte.proxima.data === HOJE);
-
-    const fimSemana = isoDe(new Date(dataDe(HOJE).getTime() + 6 * 86400000));
-
-    // aulas marcadas como prova nos próximos 7 dias (hoje incluído)
-    const provas = [];
-    ativas.forEach((d) => {
-      aulasDe(d.id).forEach((a) => {
-        if (a.data < HOJE || a.data > fimSemana) return;
-        if ((a.tags || []).some((t) => chave(t).indexOf("prova") !== -1)) provas.push({ d: d, aula: a });
-      });
-    });
-    provas.sort((a, b) => (a.aula.data < b.aula.data ? -1 : 1));
-
-    // o restante da semana (amanhã até 6 dias à frente), sem repetir a aula de hoje
-    const restoSemana = proximas(200).filter((a) => a.data > HOJE && a.data <= fimSemana);
-
-    // qualquer aula (passada ou futura) ainda marcada como conteúdo pendente, em toda disciplina ativa
-    const pendentesEnsino = [];
-    ativas.forEach((d) => {
-      aulasDe(d.id).forEach((a) => { if (a.incompleta) pendentesEnsino.push({ d: d, a: a }); });
-    });
-    pendentesEnsino.sort((x, y) => (x.a.data < y.a.data ? -1 : 1));
-
-    const pendenciasHoje = hoje.filter((x) => {
-      const anterior = x.corte.anteriores[x.corte.anteriores.length - 1];
-      return anterior && anterior.incompleta;
-    }).length;
-
-    let html = htmlAvisoArmazenamento() +
-      '<div class="page-head"><span class="eyebrow">Semana</span><h1>' + esc(dataExtenso(HOJE)) + " até " + esc(dataCurta(fimSemana)) + "</h1></div>";
-
-    html += '<div class="resumo-dia">' +
-      htmlResumoItem(hoje.length, hoje.length === 1 ? "aula hoje" : "aulas hoje", "") +
-      htmlResumoItem(pendentesEnsino.length, pendentesEnsino.length === 1 ? "conteúdo pendente" : "conteúdos pendentes", pendentesEnsino.length ? "alerta" : "") +
-      htmlResumoItem(provas.length, provas.length === 1 ? "prova esta semana" : "provas esta semana", provas.length ? "alerta" : "") +
-      "</div>";
-
-    if (provas.length) {
-      html += '<section style="margin-top:30px"><h2>Provas da semana</h2><div class="provas-lista">' +
-        provas.map((p) => htmlProvaCard(p.d, p.aula)).join("") +
-        "</div></section>";
-    }
-
-    html += '<section style="margin-top:30px"><h2>Hoje</h2>';
-    if (!hoje.length) {
-      const prox = proximas(1)[0];
-      const dProx = prox ? porId(estado.disciplinas, prox.disciplinaId) : null;
-      html += '<div class="vazio"><h3>Nenhuma aula hoje</h3><p>' +
-        (prox
-          ? "Sua próxima aula é " + esc(dProx ? dProx.nome : "") + ", " + esc(distancia(prox.data)) + "."
-          : "Não há mais aulas futuras no cronograma.") +
-        "</p></div>";
-    } else {
-      html += hoje.map((x) => htmlDisciplinaSemana(x.d, x.corte)).join("");
-    }
-    html += "</section>";
-
-    if (restoSemana.length) {
-      html += '<section style="margin-top:30px"><h2>Resto da semana</h2>' + htmlAgenda(restoSemana) + "</section>";
-    }
-
-    if (pendentesEnsino.length && pendenciasHoje !== pendentesEnsino.length) {
-      // já mostrei as de hoje no alerta de cada card; aqui listo o conjunto completo,
-      // incluindo as que não têm aula hoje pra lembrar
-      html += '<section style="margin-top:30px"><h2>Conteúdo pendente</h2><div class="pendencias-lista">' +
-        pendentesEnsino.map((x) => htmlPendenciaEnsino(x.d, x.a)).join("") +
-        "</div></section>";
-    }
-
-    html += '<section style="margin-top:30px"><h2>Reuniões da semana</h2>' +
-      '<div class="aviso-info">Conecte o Google Calendar em <strong>claude.ai → Configurações → Conectores</strong> pra ver aqui os compromissos da semana.</div></section>';
-
-    html += '<section style="margin-top:30px"><h2>Pendências gerais</h2>' +
-      '<div class="aviso-info">Ainda não há uma tarefa configurada pra trazer as pendências dos seus resumos semanais do Obsidian.</div></section>';
-
-    return html;
-  }
-
   function htmlPendenciaEnsino(d, a) {
     return '<div class="alerta-pendente-compacto"><span><i class="dot-inline" style="background:' + esc(d.cor) + '"></i>' +
       "<strong>" + esc(d.nome) + "</strong> · aula de " + esc(dataCurta(a.data)) + ": " + esc(a.assunto) +
@@ -1665,7 +1616,7 @@
       '<button class="acao-discreta" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">Ver disciplina</button></div>';
   }
 
-  function htmlDisciplinaSemana(d, corte) {
+  function htmlCardHoje(d, corte) {
     const sala = salaDe(d);
     const anterior = corte.anteriores[corte.anteriores.length - 1];
     let html = '<div class="dia-disciplina">' +
