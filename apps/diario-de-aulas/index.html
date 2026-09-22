@@ -319,6 +319,58 @@
   .destaque .detalhe { margin-top: 8px; color: var(--ink-2); font-size: 13.5px; }
   .destaque .lado { margin-left: auto; }
 
+  /* ---------- aba Hoje ---------- */
+  .resumo-dia { display: flex; gap: 12px; flex-wrap: wrap; }
+  .resumo-item {
+    flex: 1;
+    min-width: 132px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  .resumo-item strong { font-size: 28px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+  .resumo-item span { font-size: 12.5px; color: var(--ink-2); }
+  .resumo-item.alerta strong { color: var(--warm); }
+
+  .dia-disciplina + .dia-disciplina { margin-top: 30px; }
+  .dia-disciplina-cabecalho { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .dia-disciplina-cabecalho .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dia-disciplina-cabecalho strong { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+
+  .alerta-pendente-compacto {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 11px 14px;
+    margin-bottom: 10px;
+    background: var(--warm-soft);
+    border: 1px solid color-mix(in srgb, var(--warm) 30%, transparent);
+    border-radius: var(--r-md);
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .alerta-pendente-compacto span { flex: 1; min-width: 200px; }
+
+  .provas-lista { display: grid; gap: 12px; }
+  .prova-card {
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  .prova-cabecalho { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .prova-cabecalho .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .prova-cabecalho strong { font-size: 14.5px; font-weight: 600; }
+  .prova-quando { margin-left: auto; font-size: 12.5px; color: var(--warm); font-weight: 500; }
+  .prova-detalhe { margin: 8px 0 12px; font-size: 13.5px; color: var(--ink-2); }
+
   .progresso { display: grid; gap: 2px; }
   .prog-linha {
     display: grid;
@@ -1356,11 +1408,12 @@
     const foco = ativo && ativo.dataset ? ativo.dataset.foco : null;
     const selecao = ativo && ativo.selectionStart;
 
-    if (estado.aba !== "painel" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
+    if (estado.aba !== "painel" && estado.aba !== "hoje" && estado.aba !== "arquivadas" && !porId(estado.disciplinas, estado.aba)) estado.aba = "painel";
 
     desenharAbas();
     const alvo = $("#conteudo");
     alvo.innerHTML = estado.aba === "painel" ? htmlPainel()
+      : estado.aba === "hoje" ? htmlHoje()
       : estado.aba === "arquivadas" ? htmlArquivadas()
       : htmlDisciplina(porId(estado.disciplinas, estado.aba));
 
@@ -1382,7 +1435,8 @@
   function desenharAbas() {
     const abas = $("#abas");
     const itens = [
-      '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>'
+      '<button class="tab" role="tab" data-aba="painel" aria-selected="' + (estado.aba === "painel") + '" type="button">Painel</button>',
+      '<button class="tab" role="tab" data-aba="hoje" aria-selected="' + (estado.aba === "hoje") + '" type="button">Hoje</button>'
     ];
     disciplinasAtivas()
       .sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))
@@ -1489,6 +1543,120 @@
       "</section>";
 
     return html;
+  }
+
+  function htmlResumoItem(numero, rotulo, classe) {
+    return '<div class="resumo-item' + (classe ? " " + classe : "") + '"><strong class="num">' + numero + "</strong><span>" + esc(rotulo) + "</span></div>";
+  }
+
+  function htmlHoje() {
+    if (!estado.pronto) return '<p class="eyebrow">Carregando…</p>';
+    const ativas = disciplinasAtivas();
+    if (!ativas.length) {
+      return htmlAvisoArmazenamento() +
+        '<div class="page-head"><span class="eyebrow">Hoje</span><h1>Comece pelo plano de ensino</h1>' +
+        "<p>Importe o cronograma de uma disciplina para ver aqui as pendências e o conteúdo de cada dia.</p></div>" +
+        '<div class="vazio"><h3>Nenhuma disciplina ainda</h3><p>Abra a nota do plano de ensino no Obsidian, copie o cronograma e cole aqui.</p>' +
+        '<button class="btn btn-primary" data-acao="importar" type="button">Importar plano de ensino</button></div>';
+    }
+
+    // disciplinas com aula hoje, já com o recorte anterior/próxima calculado
+    const hoje = ativas
+      .map((d) => ({ d: d, corte: recorte(d.id) }))
+      .filter((x) => x.corte.proxima && x.corte.proxima.data === HOJE);
+
+    // aulas marcadas como prova nos próximos 7 dias (hoje incluído)
+    const fimSemana = isoDe(new Date(dataDe(HOJE).getTime() + 6 * 86400000));
+    const provas = [];
+    ativas.forEach((d) => {
+      aulasDe(d.id).forEach((a) => {
+        if (a.data < HOJE || a.data > fimSemana) return;
+        if ((a.tags || []).some((t) => chave(t).indexOf("prova") !== -1)) provas.push({ d: d, aula: a });
+      });
+    });
+    provas.sort((a, b) => (a.aula.data < b.aula.data ? -1 : 1));
+
+    const pendencias = hoje.filter((x) => {
+      const anterior = x.corte.anteriores[x.corte.anteriores.length - 1];
+      return anterior && anterior.incompleta;
+    }).length;
+
+    let html = htmlAvisoArmazenamento() +
+      '<div class="page-head"><span class="eyebrow">Hoje</span><h1>' + esc(dataExtenso(HOJE)) + "</h1></div>";
+
+    html += '<div class="resumo-dia">' +
+      htmlResumoItem(hoje.length, hoje.length === 1 ? "aula hoje" : "aulas hoje", "") +
+      htmlResumoItem(pendencias, pendencias === 1 ? "pendência de aula anterior" : "pendências de aula anterior", pendencias ? "alerta" : "") +
+      htmlResumoItem(provas.length, provas.length === 1 ? "prova esta semana" : "provas esta semana", provas.length ? "alerta" : "") +
+      "</div>";
+
+    if (provas.length) {
+      html += '<section style="margin-top:30px"><h2>Provas da semana</h2><div class="provas-lista">' +
+        provas.map((p) => htmlProvaCard(p.d, p.aula)).join("") +
+        "</div></section>";
+    }
+
+    html += '<section style="margin-top:30px"><h2>Aulas de hoje</h2>';
+    if (!hoje.length) {
+      const prox = proximas(1)[0];
+      const dProx = prox ? porId(estado.disciplinas, prox.disciplinaId) : null;
+      html += '<div class="vazio"><h3>Nenhuma aula hoje</h3><p>' +
+        (prox
+          ? "Sua próxima aula é " + esc(dProx ? dProx.nome : "") + ", " + esc(distancia(prox.data)) + "."
+          : "Não há mais aulas futuras no cronograma.") +
+        "</p></div>";
+    } else {
+      html += hoje.map((x) => htmlDisciplinaHoje(x.d, x.corte)).join("");
+    }
+    html += "</section>";
+
+    return html;
+  }
+
+  function htmlDisciplinaHoje(d, corte) {
+    const sala = salaDe(d);
+    const anterior = corte.anteriores[corte.anteriores.length - 1];
+    let html = '<div class="dia-disciplina">' +
+      '<div class="dia-disciplina-cabecalho"><i class="dot" style="background:' + esc(d.cor) + '"></i><strong>' + esc(d.nome) + "</strong></div>";
+
+    if (anterior && anterior.incompleta) {
+      html += '<div class="alerta-pendente-compacto"><span>⚠ A aula anterior (' + esc(dataCurta(anterior.data)) + ") ficou com conteúdo pendente: <strong>" + esc(anterior.assunto) + "</strong>" +
+        (temNota(anterior) ? " — última nota: “" + esc(anterior.notas[anterior.notas.length - 1].texto) + "”" : "") +
+        "</span>" +
+        '<button class="acao-discreta" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">Ver disciplina</button></div>';
+    }
+
+    html += '<div class="aulas">' + htmlAula(corte.proxima, "hoje", sala) + "</div></div>";
+    return html;
+  }
+
+  function htmlProvaCard(d, aula) {
+    return '<div class="prova-card">' +
+      '<div class="prova-cabecalho"><i class="dot" style="background:' + esc(d.cor) + '"></i><strong>' + esc(d.nome) + "</strong>" +
+      '<span class="prova-quando">' + esc(dataExtenso(aula.data)) + (faixaHora(aula) ? " · " + esc(faixaHora(aula)) : "") + " · " + esc(distancia(aula.data)) + "</span></div>" +
+      '<p class="prova-detalhe">' + esc(aula.assunto) + (salaDe(d) ? " · " + esc(salaDe(d)) : "") + "</p>" +
+      '<button class="btn btn-sm" data-acao="copiar-resumo-prova" data-disc="' + esc(d.id) + '" data-aula="' + esc(aula.id) + '" type="button">Copiar resumo do conteúdo</button>' +
+      "</div>";
+  }
+
+  // texto pronto pra colar numa conversa com o Claude junto do banco de questões: o conteúdo
+  // dado desde a última aula marcada como prova nesta disciplina (ou desde o início, se for a primeira)
+  function resumoProva(d, provaAula) {
+    const todas = aulasDe(d.id).filter((a) => a.data < provaAula.data);
+    let desde = null;
+    for (let i = todas.length - 1; i >= 0; i--) {
+      if ((todas[i].tags || []).some((t) => chave(t).indexOf("prova") !== -1)) { desde = todas[i]; break; }
+    }
+    const cobertos = desde ? todas.filter((a) => a.data > desde.data) : todas;
+
+    let texto = "Prova de " + d.nome + " — " + dataExtenso(provaAula.data) + (faixaHora(provaAula) ? ", " + faixaHora(provaAula) : "") + ".\n";
+    if (salaDe(d)) texto += "Local: " + salaDe(d) + "\n";
+    texto += "\nConteúdo " + (desde ? "desde a última prova (" + dataCurta(desde.data) + ")" : "dado até aqui") + ":\n";
+    texto += cobertos.length
+      ? cobertos.map((a) => "- " + dataCurta(a.data) + ": " + a.assunto + (a.tags && a.tags.length ? " [" + a.tags.join(", ") + "]" : "")).join("\n")
+      : "(nenhuma aula registrada nesse intervalo)";
+    texto += "\n";
+    return texto;
   }
 
   function htmlArquivadas() {
@@ -2215,6 +2383,15 @@
       });
     }
     else if (acao === "abrir-arquivadas") { estado.aba = "arquivadas"; agendarDesenho(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    else if (acao === "copiar-resumo-prova") {
+      const d = porId(estado.disciplinas, alvo.dataset.disc);
+      const aula = porId(estado.aulas, alvo.dataset.aula);
+      if (!d || !aula) return;
+      navigator.clipboard.writeText(resumoProva(d, aula)).then(
+        () => avisar("Resumo copiado — cole numa conversa com o Claude junto do banco de questões."),
+        () => avisar("Não consegui copiar agora. Tente novamente.")
+      );
+    }
     else if (acao === "arquivar-disc" || acao === "reativar-disc") {
       const d = porId(estado.disciplinas, alvo.dataset.disc);
       if (!d) return;
