@@ -319,24 +319,7 @@
   .destaque .detalhe { margin-top: 8px; color: var(--ink-2); font-size: 13.5px; }
   .destaque .lado { margin-left: auto; }
 
-  /* ---------- aba Hoje ---------- */
-  .resumo-dia { display: flex; gap: 12px; flex-wrap: wrap; }
-  .resumo-item {
-    flex: 1;
-    min-width: 132px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 16px 18px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow-sm);
-  }
-  .resumo-item strong { font-size: 28px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
-  .resumo-item span { font-size: 12.5px; color: var(--ink-2); }
-  .resumo-item.alerta strong { color: var(--warm); }
-
+  /* ---------- painel: destaque de hoje, provas e pendências ---------- */
   .dia-disciplina + .dia-disciplina { margin-top: 30px; }
   .dia-disciplina-cabecalho { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .dia-disciplina-cabecalho .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
@@ -1528,12 +1511,6 @@
     let html = htmlAvisoArmazenamento() +
       '<div class="page-head"><span class="eyebrow">Painel</span><h1>Suas próximas aulas</h1></div>';
 
-    html += '<div class="resumo-dia">' +
-      htmlResumoItem(hoje.length, hoje.length === 1 ? "aula hoje" : "aulas hoje", "") +
-      htmlResumoItem(pendentesEnsino.length, pendentesEnsino.length === 1 ? "conteúdo pendente" : "conteúdos pendentes", pendentesEnsino.length ? "alerta" : "") +
-      htmlResumoItem(provas.length, provas.length === 1 ? "prova esta semana" : "provas esta semana", provas.length ? "alerta" : "") +
-      "</div>";
-
     // a aula (ou aulas) já em destaque no topo, pra não repetir mais abaixo em "Depois dessa"
     let jaMostradas = new Set();
     const destaqueUnico = proximas(1)[0];
@@ -1602,10 +1579,6 @@
       "</section>";
 
     return html;
-  }
-
-  function htmlResumoItem(numero, rotulo, classe) {
-    return '<div class="resumo-item' + (classe ? " " + classe : "") + '"><strong class="num">' + numero + "</strong><span>" + esc(rotulo) + "</span></div>";
   }
 
   function htmlPendenciaEnsino(d, a) {

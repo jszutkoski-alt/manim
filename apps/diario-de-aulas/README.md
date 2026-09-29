@@ -7,7 +7,6 @@ mantidos no vault do Obsidian.
 
 - **Abas no topo** — `Painel` e uma aba por disciplina.
 - **Painel** — o panorama do que importa agora, em blocos:
-  - *Resumo em números*: aulas hoje, conteúdos pendentes em aberto, provas na semana.
   - *Hoje* (quando há aula) ou *Próxima aula* (quando não há): o card de cada aula do dia, com
     a mesma opção de comentário rápido da aba da disciplina, e um alerta quando a aula anterior
     ficou com conteúdo pendente.
