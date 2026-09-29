@@ -544,7 +544,6 @@
   .celula-cancelar:hover { background: var(--surface-3); color: var(--ink); }
 
   /* ---------- etiquetas e conteúdo pendente ---------- */
-  .pill-alerta { background: var(--warm-soft); color: var(--warm); }
   .acao-discreta {
     font-size: 12px;
     color: var(--ink-3);
@@ -600,6 +599,34 @@
   .linha-indicadores { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
   .badge-mini { font-size: 10.5px; padding: 1.5px 7px; border-radius: 999px; background: var(--surface-3); color: var(--ink-3); }
   .badge-alerta { background: var(--warm-soft); color: var(--warm); }
+
+  .observacao-pendencia {
+    margin-bottom: 12px;
+    padding: 10px 13px;
+    background: var(--warm-soft);
+    border: 1px solid color-mix(in srgb, var(--warm) 30%, transparent);
+    border-radius: var(--r-md);
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .observacao-pendencia strong { color: var(--warm); }
+
+  .pendencia-chip {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-top: 10px;
+    padding: 10px 13px;
+    background: var(--warm-soft);
+    border: 1px solid color-mix(in srgb, var(--warm) 30%, transparent);
+    border-radius: var(--r-md);
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .pendencia-chip:hover { background: color-mix(in srgb, var(--warm) 14%, var(--warm-soft)); }
+  .pendencia-chip strong { color: var(--warm); }
+
+  .pendencia-editor { margin-top: 10px; display: grid; gap: 8px; }
 
   /* ---------- vazio ---------- */
   .vazio {
@@ -1195,7 +1222,9 @@
     nuvem: false,
     abertos: new Set(),
     etiquetasAbertas: new Set(),
+    pendenciasAbertas: new Set(),
     rascunhos: {},
+    rascunhosPendencia: {},
     todasAsAulas: false,
     editandoCelula: null
   };
@@ -1504,7 +1533,7 @@
     // qualquer aula (passada ou futura) ainda marcada como conteúdo pendente, em toda disciplina ativa
     const pendentesEnsino = [];
     ativas.forEach((d) => {
-      aulasDe(d.id).forEach((a) => { if (a.incompleta) pendentesEnsino.push({ d: d, a: a }); });
+      aulasDe(d.id).forEach((a) => { if (a.pendencia) pendentesEnsino.push({ d: d, a: a }); });
     });
     pendentesEnsino.sort((x, y) => (x.a.data < y.a.data ? -1 : 1));
 
@@ -1552,7 +1581,7 @@
     const idsAlertadosHoje = new Set();
     hoje.forEach((x) => {
       const anterior = x.corte.anteriores[x.corte.anteriores.length - 1];
-      if (anterior && anterior.incompleta) idsAlertadosHoje.add(anterior.id);
+      if (anterior && anterior.pendencia) idsAlertadosHoje.add(anterior.id);
     });
     const pendentesRestantes = pendentesEnsino.filter((x) => !idsAlertadosHoje.has(x.a.id));
     if (pendentesRestantes.length) {
@@ -1583,8 +1612,7 @@
 
   function htmlPendenciaEnsino(d, a) {
     return '<div class="alerta-pendente-compacto"><span><i class="dot-inline" style="background:' + esc(d.cor) + '"></i>' +
-      "<strong>" + esc(d.nome) + "</strong> · aula de " + esc(dataCurta(a.data)) + ": " + esc(a.assunto) +
-      (temNota(a) ? " — última nota: “" + esc(a.notas[a.notas.length - 1].texto) + "”" : "") +
+      "<strong>" + esc(d.nome) + "</strong> · aula de " + esc(dataCurta(a.data)) + ": " + esc(a.pendencia) +
       "</span>" +
       '<button class="acao-discreta" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">Ver disciplina</button></div>';
   }
@@ -1592,18 +1620,10 @@
   function htmlCardHoje(d, corte) {
     const sala = salaDe(d);
     const anterior = corte.anteriores[corte.anteriores.length - 1];
-    let html = '<div class="dia-disciplina">' +
-      '<div class="dia-disciplina-cabecalho"><i class="dot" style="background:' + esc(d.cor) + '"></i><strong>' + esc(d.nome) + "</strong></div>";
-
-    if (anterior && anterior.incompleta) {
-      html += '<div class="alerta-pendente-compacto"><span>⚠ A aula anterior (' + esc(dataCurta(anterior.data)) + ") ficou com conteúdo pendente: <strong>" + esc(anterior.assunto) + "</strong>" +
-        (temNota(anterior) ? " — última nota: “" + esc(anterior.notas[anterior.notas.length - 1].texto) + "”" : "") +
-        "</span>" +
-        '<button class="acao-discreta" data-acao="abrir" data-disc="' + esc(d.id) + '" type="button">Ver disciplina</button></div>';
-    }
-
-    html += '<div class="aulas">' + htmlAula(corte.proxima, "hoje", sala) + "</div></div>";
-    return html;
+    const pendenciaAnterior = anterior && anterior.pendencia ? { data: anterior.data, texto: anterior.pendencia } : null;
+    return '<div class="dia-disciplina">' +
+      '<div class="dia-disciplina-cabecalho"><i class="dot" style="background:' + esc(d.cor) + '"></i><strong>' + esc(d.nome) + "</strong></div>" +
+      '<div class="aulas">' + htmlAula(corte.proxima, "hoje", sala, pendenciaAnterior) + "</div></div>";
   }
 
   function htmlProvaCard(d, aula) {
@@ -1689,8 +1709,14 @@
     const todas = aulasDe(d.id);
     const cartoes = [];
     const sala = salaDe(d);
-    corte.anteriores.forEach((a) => cartoes.push(htmlAula(a, "passada", sala)));
-    if (corte.proxima) cartoes.push(htmlAula(corte.proxima, corte.proxima.data === HOJE ? "hoje" : "proxima", sala));
+    // pendência da aula que vem imediatamente antes de "a" no cronograma completo, se houver
+    const pendenciaAntesDe = (a) => {
+      const idx = todas.findIndex((x) => x.id === a.id);
+      const antes = idx > 0 ? todas[idx - 1] : null;
+      return antes && antes.pendencia ? { data: antes.data, texto: antes.pendencia } : null;
+    };
+    corte.anteriores.forEach((a) => cartoes.push(htmlAula(a, "passada", sala, pendenciaAntesDe(a))));
+    if (corte.proxima) cartoes.push(htmlAula(corte.proxima, corte.proxima.data === HOJE ? "hoje" : "proxima", sala, pendenciaAntesDe(corte.proxima)));
 
     const etiqueta = [d.curso, d.codigo, d.horario].filter(Boolean).join(" · ") || "Disciplina";
     let html = htmlAvisoArmazenamento() +
@@ -1737,7 +1763,7 @@
     return html;
   }
 
-  function htmlAula(a, estadoAula, sala) {
+  function htmlAula(a, estadoAula, sala, pendenciaAnterior) {
     const p = partes(a.data);
     const rotulo = estadoAula === "hoje" ? '<span class="pill pill-hoje">Aula de hoje</span>'
       : estadoAula === "proxima" ? '<span class="pill pill-proxima">Próxima aula</span>'
@@ -1752,12 +1778,13 @@
       (faixaHora(a) ? '<span class="hora">' + esc(faixaHora(a)) + "</span>" : "") +
       (sala ? '<span class="sala">' + esc(sala) + "</span>" : "") +
       (temNota(a) ? '<span class="pill pill-nota">' + a.notas.length + (a.notas.length > 1 ? " anotações" : " anotação") + "</span>" : "") +
-      (a.incompleta
-        ? '<button class="pill pill-alerta" data-acao="alternar-incompleta" data-aula="' + esc(a.id) + '" type="button" title="Clique para marcar como concluído">⚠ Conteúdo pendente</button>'
-        : '<button class="acao-discreta" data-acao="alternar-incompleta" data-aula="' + esc(a.id) + '" type="button">Marcar conteúdo pendente</button>') +
       "</div>" +
+      (pendenciaAnterior
+        ? '<div class="observacao-pendencia">📌 <strong>Pendente da aula de ' + esc(dataCurta(pendenciaAnterior.data)) + ":</strong> " + esc(pendenciaAnterior.texto) + "</div>"
+        : "") +
       "<h3>" + esc(a.assunto) + "</h3>" +
       htmlEtiquetas(a) +
+      htmlPendencia(a) +
       (temNota(a) ? '<div class="notas">' + a.notas.map((n) => htmlNota(a, n)).join("") + "</div>" : "") +
       (aberto
         ? '<div class="compositor">' +
@@ -1779,9 +1806,9 @@
   // selo de conteúdo pendente + etiquetas, exibidos junto do assunto no cronograma completo
   function htmlIndicadoresLinha(a) {
     const tags = a.tags || [];
-    if (!a.incompleta && !tags.length) return "";
+    if (!a.pendencia && !tags.length) return "";
     return '<div class="linha-indicadores">' +
-      (a.incompleta ? '<span class="badge-mini badge-alerta">⚠ Pendente</span>' : "") +
+      (a.pendencia ? '<span class="badge-mini badge-alerta" title="' + esc(a.pendencia) + '">⚠ Pendente</span>' : "") +
       tags.map((t) => '<span class="badge-mini">' + esc(t) + "</span>").join("") +
       "</div>";
   }
@@ -1849,11 +1876,59 @@
     agendarDesenho();
   }
 
-  async function alternarIncompleta(aulaId) {
+  // chip/editor do que ficou pendente nesta aula; quando salvo, aparece como observação
+  // no card da aula seguinte da mesma disciplina (ver pendenciaAntesDe em htmlDisciplina)
+  function htmlPendencia(a) {
+    if (estado.pendenciasAbertas.has(a.id)) {
+      const rascunho = estado.rascunhosPendencia[a.id] != null ? estado.rascunhosPendencia[a.id] : (a.pendencia || "");
+      return '<div class="pendencia-editor">' +
+        '<textarea class="auto" data-foco="pend-' + esc(a.id) + '" data-campo-pendencia="' + esc(a.id) + '" rows="2" placeholder="O que ficou pendente desta aula?">' + esc(rascunho) + "</textarea>" +
+        '<div class="compositor-acoes">' +
+        '<button class="btn btn-sm btn-primary" data-acao="salvar-pendencia" data-aula="' + esc(a.id) + '" type="button">Salvar</button>' +
+        (a.pendencia ? '<button class="btn btn-sm btn-quiet" data-acao="remover-pendencia" data-aula="' + esc(a.id) + '" type="button">Remover</button>' : "") +
+        '<button class="btn btn-sm btn-quiet" data-acao="cancelar-pendencia" data-aula="' + esc(a.id) + '" type="button">Cancelar</button>' +
+        "</div></div>";
+    }
+    if (a.pendencia) {
+      return '<button class="pendencia-chip" data-acao="abrir-pendencia" data-aula="' + esc(a.id) + '" type="button">⚠ <strong>Pendente:</strong> ' + esc(a.pendencia) + "</button>";
+    }
+    return '<button class="acao-discreta" data-acao="abrir-pendencia" data-aula="' + esc(a.id) + '" type="button">+ marcar conteúdo pendente</button>';
+  }
+
+  function abrirPendencia(aulaId) {
+    estado.pendenciasAbertas.add(aulaId);
+    agendarDesenho();
+    setTimeout(() => {
+      const campo = document.querySelector('[data-campo-pendencia="' + aulaId + '"]');
+      if (campo) { campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }
+    }, 20);
+  }
+
+  function cancelarPendencia(aulaId) {
+    estado.pendenciasAbertas.delete(aulaId);
+    delete estado.rascunhosPendencia[aulaId];
+    agendarDesenho();
+  }
+
+  async function salvarPendencia(aulaId) {
     const aula = porId(estado.aulas, aulaId);
     if (!aula) return;
-    await salvarAula(Object.assign({}, aula, { incompleta: !aula.incompleta }));
+    const texto = String(estado.rascunhosPendencia[aulaId] != null ? estado.rascunhosPendencia[aulaId] : (aula.pendencia || "")).trim();
+    estado.pendenciasAbertas.delete(aulaId);
+    delete estado.rascunhosPendencia[aulaId];
+    await salvarAula(Object.assign({}, aula, { pendencia: texto }));
     agendarDesenho();
+    avisar(texto ? "Pendência registrada — vai aparecer na próxima aula." : "Pendência removida.");
+  }
+
+  async function removerPendencia(aulaId) {
+    const aula = porId(estado.aulas, aulaId);
+    if (!aula) return;
+    estado.pendenciasAbertas.delete(aulaId);
+    delete estado.rascunhosPendencia[aulaId];
+    await salvarAula(Object.assign({}, aula, { pendencia: "" }));
+    agendarDesenho();
+    avisar("Pendência removida.");
   }
 
   function ajustarAltura(area) {
@@ -2134,7 +2209,7 @@
           if (unidade) md += "\n### " + unidade + "\n";
         }
         md += "\n**" + dataCurta(a.data) + "**" + (faixaHora(a) ? " · " + faixaHora(a) : "") + " — " + a.assunto +
-          (a.incompleta ? " ⚠ *conteúdo não concluído*" : "") + "\n";
+          (a.pendencia ? " ⚠ *pendente:* " + a.pendencia : "") + "\n";
         if (a.tags && a.tags.length) md += "*Etiquetas:* " + a.tags.join(", ") + "\n";
         if (temNota(a)) {
           a.notas.forEach((n) => {
@@ -2337,7 +2412,10 @@
     else if (acao === "cancelar-nota") { estado.abertos.delete(alvo.dataset.aula); delete estado.rascunhos[alvo.dataset.aula]; agendarDesenho(); }
     else if (acao === "salvar-nota") salvarNota(alvo.dataset.aula);
     else if (acao === "apagar-nota") apagarNota(alvo.dataset.aula, alvo.dataset.nota);
-    else if (acao === "alternar-incompleta") alternarIncompleta(alvo.dataset.aula);
+    else if (acao === "abrir-pendencia") abrirPendencia(alvo.dataset.aula);
+    else if (acao === "cancelar-pendencia") cancelarPendencia(alvo.dataset.aula);
+    else if (acao === "salvar-pendencia") salvarPendencia(alvo.dataset.aula);
+    else if (acao === "remover-pendencia") removerPendencia(alvo.dataset.aula);
     else if (acao === "abrir-etiqueta") abrirEtiqueta(alvo.dataset.aula);
     else if (acao === "cancelar-etiqueta") fecharEtiqueta(alvo.dataset.aula);
     else if (acao === "sugestao-etiqueta") adicionarEtiqueta(alvo.dataset.aula, alvo.dataset.valor);
@@ -2405,6 +2483,11 @@
       ajustarAltura(campo);
       return;
     }
+    if (campo.dataset && campo.dataset.campoPendencia) {
+      estado.rascunhosPendencia[campo.dataset.campoPendencia] = campo.value;
+      ajustarAltura(campo);
+      return;
+    }
     if (campo.id === "entrada" || campo.id === "campo-ano") atualizarPrevia();
   });
 
@@ -2419,6 +2502,11 @@
       else if (ev.key === "Escape") { ev.preventDefault(); fecharEtiqueta(ev.target.dataset.campoEtiqueta); }
       return;
     }
+    if (ev.key === "Escape" && ev.target.dataset && ev.target.dataset.campoPendencia) {
+      ev.preventDefault();
+      cancelarPendencia(ev.target.dataset.campoPendencia);
+      return;
+    }
     if (ev.key === "Enter" && !$("#capa-editar").hidden && ev.target.tagName === "INPUT" && ev.target.type === "text") {
       ev.preventDefault();
       salvarEdicao();
@@ -2430,6 +2518,7 @@
     if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") {
       const campo = ev.target;
       if (campo.dataset && campo.dataset.campoNota) { ev.preventDefault(); salvarNota(campo.dataset.campoNota); }
+      else if (campo.dataset && campo.dataset.campoPendencia) { ev.preventDefault(); salvarPendencia(campo.dataset.campoPendencia); }
       else if (!$("#capa-editar").hidden) { ev.preventDefault(); salvarEdicao(); }
       else if (!$("#capa-importador").hidden && !$("#btn-confirmar").disabled) { ev.preventDefault(); confirmarImportacao(); }
     }

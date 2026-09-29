@@ -8,8 +8,8 @@ mantidos no vault do Obsidian.
 - **Abas no topo** — `Painel` e uma aba por disciplina.
 - **Painel** — o panorama do que importa agora, em blocos:
   - *Hoje* (quando há aula) ou *Próxima aula* (quando não há): o card de cada aula do dia, com
-    a mesma opção de comentário rápido da aba da disciplina, e um alerta quando a aula anterior
-    ficou com conteúdo pendente.
+    a mesma opção de comentário rápido da aba da disciplina, e uma observação automática quando
+    a aula anterior ficou com conteúdo pendente.
   - *Provas da semana*: aulas marcadas com a etiqueta "Prova" nos próximos 7 dias, cada uma com
     um botão que copia um resumo do conteúdo dado desde a última prova daquela disciplina —
     para colar numa conversa com o Claude junto do banco de questões do Obsidian e montar a
@@ -38,8 +38,9 @@ mantidos no vault do Obsidian.
   deve valer para elas também.
 - **Etiquetas por aula** — marque uma aula com "Prova", "Revisão" ou qualquer etiqueta livre.
   Aparecem no card, no cronograma completo e no markdown exportado.
-- **Conteúdo não concluído** — sinalize numa aula que sobrou matéria pra próxima vez. Vira um
-  selo visível no card e no cronograma, e entra no markdown exportado.
+- **Conteúdo pendente** — escreva, numa aula, o que sobrou pra próxima vez ("não deu tempo dos
+  exercícios 4-6"). Esse texto aparece automaticamente como observação no card da aula seguinte
+  daquela disciplina, além de um selo no cronograma e uma linha no markdown exportado.
 - **Arquivar disciplina** — tira uma disciplina encerrada das abas e do painel sem apagar nada.
   Fica reunida numa aba "Arquivadas", com um botão para reativar quando precisar.
 
